@@ -10,9 +10,9 @@ https://requests.readthedocs.io/en/latest/
 https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 """
 
-__author__ = 'HAYASHI Tomokazu'
+__author__ = 'HAYASHI Tomokazu, Ayumu Sakai'
 __version__ = '1.0.3'
-__date__ = '2023/9/15 (Created: 2023/9/12)'
+__date__ = '2023/10/20 (Created: 2023/9/12)'
 
 import json
 import os
@@ -53,33 +53,35 @@ class Crawler:
     @staticmethod
     def join_path(*a_tuple):
         """
-        ???
+        ファイルを保存するディレクトリを返す。
+        引数(*a_tuple)は複数の引数をタプルとして受け取る
         """
         return os.path.join(*a_tuple)
 
     def crawl_top_page(self, start_urls, url_pattern):
         """
-        ???
+        start_urlsから記事のurlセットを作成し、返す。
+        もし見つからなかった場合は空のセットを返す。
         """
         url_set = set()
         for start_url in start_urls:
             print(f'Top page URL: {start_url}', end='')
             html_document = self.get_html_document(start_url)
-            if html_document:
+            if html_document:          # 変数html_ducmentに値が入っていればSuccess、入っていなければFailureでreturn
                 print(' -> Success')
             else:
                 print(' -> Failure')
                 return url_set
-            url_set |= self.extract_urls(url_pattern, html_document)
+            url_set |= self.extract_urls(url_pattern, html_document) #重複しないように
         return url_set
 
     def get_html_document(self, url):
         """
-        ???
+        urlからテキストをダウンロードし、テキスト本文(html)を返す
         """
         time.sleep(self.sleep_time)
         try:
-            response = requests.get(url, timeout=(6.0, 6.0))
+            response = requests.get(url, timeout=(6.0, 6.0)) # ダウンロード
         except OSError:
             return None
         if response.status_code != 200:
@@ -90,39 +92,39 @@ class Crawler:
     @staticmethod
     def extract_urls(url_pattern, html_document):
         """
-        ???
+        BeatifulSoupを使用して解析する。引数のdocumentからurlリストのみを抽出し返す。
         """
         soup = BeautifulSoup(html_document, "html.parser")
         url_set = set()
-        for each in soup.find('ul', class_='widget_boxlist_set').find_all('a'):
-            url = each.get('href')
-            if url_pattern.match(url):
-                url_set.add(url)
+        for each in soup.find('ul', class_='widget_boxlist_set').find_all('a'): # soupから<ul>(widget_boxlist_setクラス)を検索しその中から<a>の内容を繰り返す
+            url = each.get('href') #urlのみを抽出
+            if url_pattern.match(url): # 指定されたurlパターンと正しければ
+                url_set.add(url) #urlのセットに追加する
         return url_set
 
     def crawl_article_page(self, category_name, urls, output_path):
         """
-        ???
+        指定された回数だけ記事をサーバーから取得し、jsonファイルとして書き込みを行う
         """
         article_count = 0
         for url in urls:
-            if not url.startswith(self.domains):
+            if not url.startswith(self.domains): # domainsのurlが不完全であれば、完全なurl形式に変換する
                 url = f'{self.domains}{url}'
             print(f'  Article page URL: {url}', end='')
             article_id = self.get_article_id(url)
-            file_name = self.join_path(
+            file_name = self.join_path(               # パスとファイル名で出力先のパスを指定
                 output_path, f"{article_id}.json"
             )
-            if os.path.isfile(file_name):
+            if os.path.isfile(file_name):     #ファイルが既に存在すればcontinue
                 print(' -> Already exists')
                 continue
-            html_document = self.get_html_document(url)
-            if html_document:
-                article_count += 1
-                progress = f'({article_count} / {self.args.article_nums})'
+            html_document = self.get_html_document(url) #urlから記事のhtmlを取得
+            if html_document: # ドキュメントが存在すれば
+                article_count += 1 # 記事数カウント
+                progress = f'({article_count} / {self.args.article_nums})'  # 現在の取得数 / 設定された取得数
                 print(f' -> Success {progress}')
             else:
-                print(' -> Failure')
+                print(' -> Failure')   # ドキュメントが変数内に入っていないためcontinue
                 continue
             article = self.extract_title_and_body(html_document)
             article_dict = self.define_format(
@@ -134,7 +136,7 @@ class Crawler:
 
     def extract_title_and_body(self, html_document):
         """
-        ???
+        入力された記事htmlからタイトルと本文を返す
         """
         soup = BeautifulSoup(html_document, "html.parser")
         title = soup.title.string
@@ -143,7 +145,7 @@ class Crawler:
 
     def define_format(self, article_id, category_name, url, article):
         """
-        ???
+        id,category,url,title,bodyを辞書型にして返す
         """
         return {
             'id': article_id,
@@ -156,21 +158,21 @@ class Crawler:
     @staticmethod
     def get_article_id(url):
         """
-        ???
+        urlから最後の/の後の記事idのみをreturnする。
         """
         return url.rstrip('/').rsplit('/', 1)[-1]
 
     @staticmethod
     def make_directories(path):
         """
-        ???
+        出力するディレクトリを作成する
         """
         os.makedirs(path, exist_ok=True)
 
     @staticmethod
     def write_json_file(file_name, a_dict):
         """
-        ???
+        入力された辞書をjsonファイルとして保存
         """
         with open(file_name, 'w', encoding='utf-8') as a_file:
             json.dump(a_dict, a_file, ensure_ascii=False, indent=2)
@@ -301,12 +303,12 @@ def main():
     app.run(*configure_society())
     app.run(*configure_government())
     app.run(*configure_sports())
-    # app.run(*configure_technology())
-    # app.run(*configure_entame())
-    # app.run(*configure_movie())
-    # app.run(*configure_music())
-    # app.run(*configure_anime())
-    # app.run(*configure_gourmet())
+    app.run(*configure_technology())
+    app.run(*configure_entame())
+    app.run(*configure_movie())
+    app.run(*configure_music())
+    app.run(*configure_anime())
+    app.run(*configure_gourmet())
     return 0
 
 
