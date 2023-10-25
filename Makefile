@@ -2,7 +2,7 @@ PYTHON	= python
 PYDOC	= pydoc
 PYCS	= $(shell find . -name "*.pyc")
 PYCACHE	= $(shell find . -name "__pycache__")
-MODULE	= crawler
+MODULE	= indexer
 TARGET	= $(MODULE).py
 ARCHIVE	= $(shell basename `pwd`)
 PYLINTRST	= pylintresult.txt
@@ -26,8 +26,14 @@ clean:
 	@find . -name ".DS_Store" -exec rm {} ";" -exec echo rm -f {} ";"
 
 test:
+ifeq ($(MODULE),crawler)
 	@$(PYTHON) ./$(TARGET) --article_nums 100 --output_path output
+endif
 
+ifeq ($(MODULE),indexer)
+	@$(PYTHON) ./$(TARGET)
+endif
+	
 doc:
 	@$(PYDOC) ./$(TARGET)
 
