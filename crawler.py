@@ -303,12 +303,12 @@ def main():
     app.run(*configure_society())
     app.run(*configure_government())
     app.run(*configure_sports())
-    app.run(*configure_technology())
-    app.run(*configure_entame())
-    app.run(*configure_movie())
-    app.run(*configure_music())
-    app.run(*configure_anime())
-    app.run(*configure_gourmet())
+    #app.run(*configure_technology())
+    #app.run(*configure_entame())
+    #app.run(*configure_movie())
+    #app.run(*configure_music())
+    #app.run(*configure_anime())
+    #app.run(*configure_gourmet())
     return 0
 
 
