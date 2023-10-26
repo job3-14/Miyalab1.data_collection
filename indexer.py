@@ -13,7 +13,7 @@ import json
 import os
 import sys
 import glob
-import CaboCha
+import MeCab
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 
@@ -81,22 +81,20 @@ class Indexer:
     @staticmethod
     def morphological_analysis(json_list):
         """
-        入力の辞書リストから形態素解析を行いidと名詞の辞書に変換し返す
+        入力の辞書リストから形態素解析を行う
         """
-        c = CaboCha.Parser() # CaboChaによる構文解析を行うオブジェクトを用意
-        for tmp_json in json_list:
-            noun = [] # 名詞リスト
-            tree = c.parse(tmp_json['title']+'\n'+tmp_json['body'])
-            for i in range(tree.chunk_size()):     # 解析結果(tree)に文節単位でアクセスする
-                chunk = tree.chunk(i)              # i番目の文節オブジェクトを取得
-                for j in range(chunk.token_size):  # 文節内の各形態素について繰り返す
-                    token = tree.token(chunk.token_pos+j) # j番目の形態素オブジェクトを取得
-                    feature_list = token.feature.split(",")  # リストに変換
-                    if(feature_list[0] == '名詞'):    # 名詞のみを出力
-                        noun.append(token.surface)   # 名詞リストに追加
-            print(noun)
-            sys.exit()
-
+        text = json_list[0]['title'] + '\n' + json_list[0]['body']
+        tagger = MeCab.Tagger('')
+        tagger.parse('')
+        node = tagger.parseToNode(text)
+        word_set = set()
+        while node:
+            term = node.surface
+            pos = node.feature.split(',')[0]
+            if pos in '名詞':
+                word_set.add(term)
+            node = node.next
+        print(word_set)
 
 
 
