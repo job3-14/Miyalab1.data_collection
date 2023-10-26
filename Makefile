@@ -100,6 +100,6 @@ list: pip
 	@(pip list --format=freeze | grep ^requests==)
 	@(pip list --format=freeze | grep ^beautifulsoup4==)
 
-prepare: pip pylint flake8 requests beautifulsoup4
+prepare: pip pylint flake8 requests beautifulsoup4 mecab-python3 unidic-lite
 
 update: prepare
