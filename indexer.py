@@ -124,28 +124,22 @@ class Indexer:
         tfを計算を行う
         入力した全てのもので計算を行う
         return {id:{word:tf}}
+        参考：https://atmarkit.itmedia.co.jp/ait/articles/2112/23/news028.html
         """
         input_dict = {}
         for i in range(len(word_count_dict)): #全ての入力を結合
             input_dict |= word_count_dict[i]
 
-        word_set = set() # ワードのキーを作成する
+        all_count_dict = {}
         for id in input_dict:
-            for key in input_dict[id].keys():
-                word_set.add(key)
-
-        word_all_count = {} # ワードに対する全体の個数を計算する
-        for serach_word in word_set:
             count = 0
-            for id in input_dict: # idごとに抽出
-                tmp = input_dict[id].get(serach_word,-1)
-                if tmp != -1:
-                    count += tmp
-            word_all_count[serach_word] = count
+            for key in input_dict[id]:
+                count += input_dict[id][key]
+            all_count_dict[id] = count
         
         for id in input_dict:
             for key in input_dict[id]:
-                input_dict[id][key] = input_dict[id][key] / word_all_count[key] # tfを計算する。文書内での出現回数 / 全ての文章での出現回数
+                input_dict[id][key] = input_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
         return input_dict
 
 
