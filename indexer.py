@@ -37,7 +37,9 @@ class Indexer:
             output_path = self.join_path(self.args.output_path)
             json_list = self.read_json(self.open_file_list(input_path, self.args.category))
             word_dict = self.morphological_analysis(json_list)
-            self.count_tf(self.make_word_count(word_dict))
+            tf_dict = self.count_tf(self.make_word_count(word_dict))
+            self.tf_sort(tf_dict)
+
 
             
 
@@ -130,7 +132,7 @@ class Indexer:
         for i in range(len(word_count_dict)): #全ての入力を結合
             input_dict |= word_count_dict[i]
 
-        all_count_dict = {}
+        all_count_dict = {} #文章内の単語数を計算
         for id in input_dict:
             count = 0
             for key in input_dict[id]:
@@ -141,7 +143,18 @@ class Indexer:
             for key in input_dict[id]:
                 input_dict[id][key] = input_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
         return input_dict
-
+    
+    @staticmethod
+    def tf_sort(tf_dict):
+        """
+        tf値を頻度とその降順の配列で返す
+        """
+        frequency = [] # 頻度
+        for id in tf_dict:
+            for key in tf_dict[id]:
+                frequency.append(tf_dict[id][key])
+        frequency.sort(reverse=True)
+        return frequency
 
 
 
