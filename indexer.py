@@ -36,7 +36,9 @@ class Indexer:
             input_path = self.join_path(self.args.input_path)
             output_path = self.join_path(self.args.output_path)
             json_list = self.read_json(self.open_file_list(input_path, self.args.category))
-            self.morphological_analysis(json_list)
+            word_dict = self.morphological_analysis(json_list)
+            self.count_tf(self.make_word_count(word_dict))
+
             
 
         except KeyboardInterrupt:
@@ -81,22 +83,75 @@ class Indexer:
     @staticmethod
     def morphological_analysis(json_list):
         """
-        入力の辞書リストから形態素解析を行う
+        入力の辞書リストから形態素解析を行い単語を返す。
+        return {id:[[word_list],(word_set)]}
         """
-        text = json_list[0]['title'] + '\n' + json_list[0]['body']
-        tagger = MeCab.Tagger('')
-        tagger.parse('')
-        node = tagger.parseToNode(text)
-        word_set = set()
-        while node:
-            term = node.surface
-            pos = node.feature.split(',')[0]
-            if pos in '名詞':
-                word_set.add(term)
-            node = node.next
-        print(word_set)
+        word_dict = {}
+        for article in json_list:
+            text = article['title'] + '\n' + article['body']
+            tagger = MeCab.Tagger('')
+            tagger.parse('')
+            node = tagger.parseToNode(text)
+            word_set = set()
+            word_list = []
+            while node:
+                term = node.surface
+                pos = node.feature.split(',')[0]
+                if pos in '名詞':
+                    word_set.add(term)
+                    word_list.append(term)
+                node = node.next
+            word_dict[article['id']] = [word_list, word_set]
+        return word_dict
+    
+    @staticmethod
+    def make_word_count(word_dict):
+        """
+        ワードごとに回数リストを作成する。
+        return {id:{word:回数}}
+        """
+        word_count_dict = {}
+        for article in word_dict:       # 全てのidで繰り返し
+            word_count = {}
+            for word in word_dict[article][1]:  # setのみを抽出
+                word_count[word] = word_dict[article][0].count(word)
+            word_count_dict[article] = word_count
+        return word_count_dict
+
+    @staticmethod
+    def count_tf(*word_count_dict):
+        """
+        tfを計算を行う
+        入力した全てのもので計算を行う
+        return {id:{word:tf}}
+        """
+        input_dict = {}
+        for i in range(len(word_count_dict)): #全ての入力を結合
+            input_dict |= word_count_dict[i]
+
+        word_set = set() # ワードのキーを作成する
+        for id in input_dict:
+            for key in input_dict[id].keys():
+                word_set.add(key)
+
+        word_all_count = {} # ワードに対する全体の個数を計算する
+        for serach_word in word_set:
+            count = 0
+            for id in input_dict: # idごとに抽出
+                tmp = input_dict[id].get(serach_word,-1)
+                if tmp != -1:
+                    count += tmp
+            word_all_count[serach_word] = count
+        
+        for id in input_dict:
+            for key in input_dict[id]:
+                input_dict[id][key] = input_dict[id][key] / word_all_count[key] # tfを計算する。文書内での出現回数 / 全ての文章での出現回数
+        return input_dict
 
 
+
+
+        
 
 
         
