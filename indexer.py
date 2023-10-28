@@ -14,8 +14,12 @@ import os
 import sys
 import glob
 import MeCab
+import math
+import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
+
+
 
 
 class Indexer:
@@ -35,10 +39,10 @@ class Indexer:
         try:
             input_path = self.join_path(self.args.input_path)
             output_path = self.join_path(self.args.output_path)
-            json_list = self.read_json(self.open_file_list(input_path, self.args.category))
+            json_list = self.read_json(self.open_file_list(input_path, self.args.category)) # ファイル一覧を取得し、jsonを開き辞書にして返す
             word_dict = self.morphological_analysis(json_list)
-            tf_dict = self.count_tf(self.make_word_count(word_dict))
-            self.tf_sort(tf_dict)
+            tf_dict = self.count_tf(json_list, self.make_word_count(word_dict), 'society', 'government', 'sports')
+            self.make_plot(self.make_tf(tf_dict))
 
 
             
@@ -78,7 +82,7 @@ class Indexer:
         for tmp_path in path:
             with open(tmp_path) as f:
                 json_raw_data = json.load(f)
-            del json_raw_data['category'], json_raw_data['url']
+            del  json_raw_data['url']
             json_list.append(json_raw_data)
         return json_list
     
@@ -121,16 +125,19 @@ class Indexer:
         return word_count_dict
 
     @staticmethod
-    def count_tf(*word_count_dict):
+    def count_tf(json_list, word_count_dict, *category):
         """
         tfを計算を行う
-        入力した全てのもので計算を行う
+        入力のカテゴリーのもので計算を行う
+        引数 
         return {id:{word:tf}}
         参考：https://atmarkit.itmedia.co.jp/ait/articles/2112/23/news028.html
         """
         input_dict = {}
-        for i in range(len(word_count_dict)): #全ての入力を結合
-            input_dict |= word_count_dict[i]
+        for tmp_json in json_list: #全ての入力を結合
+            if(tmp_json['category'] in category):
+                tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
+                input_dict |= tmp_dict
 
         all_count_dict = {} #文章内の単語数を計算
         for id in input_dict:
@@ -145,16 +152,31 @@ class Indexer:
         return input_dict
     
     @staticmethod
-    def tf_sort(tf_dict):
+    def make_tf(tf_dict):
         """
-        tf値を頻度とその降順の配列で返す
+        tf値を頻度とその降順のx,yの配列で返す
         """
         frequency = [] # 頻度
         for id in tf_dict:
             for key in tf_dict[id]:
-                frequency.append(tf_dict[id][key])
+                frequency.append(math.log(tf_dict[id][key]))
         frequency.sort(reverse=True)
-        return frequency
+        cie_x = []
+        for i in range(len(frequency)):
+            cie_x.append(math.log(i+1))
+        cie = [[cie_x],[frequency]]
+        return cie
+    
+    @staticmethod
+    def make_plot(cie):
+        """
+        配列からグラフを作成する
+        """
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.scatter(cie[0], cie[1])
+        plt.show()
+
 
 
 
