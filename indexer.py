@@ -11,6 +11,7 @@ __date__ = '2023/10/25 (Created: 2023/10/25)'
 
 import json
 import os
+from re import S
 import sys
 import glob
 import MeCab
@@ -41,8 +42,11 @@ class Indexer:
             output_path = self.join_path(self.args.output_path)
             json_list = self.read_json(self.open_file_list(input_path, self.args.category)) # ファイル一覧を取得し、jsonを開き辞書にして返す
             word_dict = self.morphological_analysis(json_list)
-            tf_dict = self.count_tf(json_list, self.make_word_count(word_dict))
-            self.make_plot(self.make_tf(tf_dict))
+            word_count_dict = self.make_word_count(word_dict)
+            tf_dict = self.count_tf(json_list, word_count_dict)
+            #self.make_plot(self.make_tf_list(tf_dict))
+            word_count_dict = self.make_word_count(word_dict)
+            idf_dict = self.count_idf(word_count_dict)
 
 
             
@@ -155,7 +159,7 @@ class Indexer:
         return input_dict
     
     @staticmethod
-    def make_tf(tf_dict):
+    def make_tf_list(tf_dict):
         """
         tf値を頻度とその降順のx,yの配列で返す
         """
@@ -179,6 +183,44 @@ class Indexer:
         ax = fig.add_subplot(1, 1, 1)
         ax.scatter(cie[0], cie[1])
         plt.show()
+
+    @staticmethod
+    def count_idf(word_count_dict):
+        """
+        idfを計算する
+        return {id:{word:idf}}
+        """
+        count_id = len(word_count_dict) # 全文書数
+        count_word = {} # 単語が出現する文書数
+        word_set = set()
+        # setを作る
+        for tmp in word_count_dict:
+            for key in word_count_dict.get(tmp):
+                word_set.add(key)
+        
+        # setから0の辞書を作成
+        for tmp in word_set:
+            count_word[tmp] = 0
+        
+        # ワードが出現する文書数を数える
+        for tmp_set in word_set: # キーワードに対して繰り返し
+            for tmp in word_count_dict:
+                for key in word_count_dict.get(tmp):
+                    if(key==tmp_set):
+                        count_word[tmp_set] += 1
+                        break
+        
+        #idfを計算
+        for key in count_word:
+            count_word[key] = math.log(count_id / count_word[key])
+
+        
+
+            
+
+            
+        
+
 
 
 
