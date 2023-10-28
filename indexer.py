@@ -41,7 +41,7 @@ class Indexer:
             output_path = self.join_path(self.args.output_path)
             json_list = self.read_json(self.open_file_list(input_path, self.args.category)) # ファイル一覧を取得し、jsonを開き辞書にして返す
             word_dict = self.morphological_analysis(json_list)
-            tf_dict = self.count_tf(json_list, self.make_word_count(word_dict), 'society', 'government', 'sports')
+            tf_dict = self.count_tf(json_list, self.make_word_count(word_dict))
             self.make_plot(self.make_tf(tf_dict))
 
 
@@ -129,16 +129,19 @@ class Indexer:
         """
         tfを計算を行う
         入力のカテゴリーのもので計算を行う
-        引数 
+        引数 json_list, word_count_dict, *カテゴリー
+        カテゴリーの引数がない場合は全てのカテゴリーで実行
         return {id:{word:tf}}
         参考：https://atmarkit.itmedia.co.jp/ait/articles/2112/23/news028.html
         """
         input_dict = {}
-        for tmp_json in json_list: #全ての入力を結合
-            if(tmp_json['category'] in category):
-                tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
-                input_dict |= tmp_dict
-
+        if(len(category)==0):
+            input_dict = word_count_dict
+        else:
+            for tmp_json in json_list: #全ての入力を結合
+                if(tmp_json['category'] in category):
+                    tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
+                    input_dict |= tmp_dict
         all_count_dict = {} #文章内の単語数を計算
         for id in input_dict:
             count = 0
