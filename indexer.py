@@ -38,15 +38,15 @@ class Indexer:
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path)
-            output_path = self.join_path(self.args.output_path)
+            input_path = self.join_path(self.args.input_path)     # inputパス
+            output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(self.open_file_list(input_path, self.args.category)) # ファイル一覧を取得し、jsonを開き辞書にして返す
             word_dict = self.morphological_analysis(json_list)
             word_count_dict = self.make_word_count(word_dict)
             tf_dict = self.count_tf(json_list, word_count_dict)
             #self.make_plot(self.make_tf_list(tf_dict))
             word_count_dict = self.make_word_count(word_dict)
-            idf_dict = self.count_idf(word_count_dict)
+            idf_dict = self.count_idf(json_list, word_count_dict)
 
 
             
@@ -185,17 +185,26 @@ class Indexer:
         plt.show()
 
     @staticmethod
-    def count_idf(word_count_dict):
+    def count_idf(json_list, word_count_dict, *category):
         """
         idfを計算する
         return {id:{word:idf}}
         """
-        count_id = len(word_count_dict) # 全文書数
+        input_dict = {}
+        if(len(category)==0):
+            input_dict = word_count_dict
+        else:
+            for tmp_json in json_list: #全ての入力を結合
+                if(tmp_json['category'] in category):
+                    tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
+                    input_dict |= tmp_dict
+        
+        count_id = len(input_dict) # 全文書数
         count_word = {} # 単語が出現する文書数
         word_set = set()
         # setを作る
-        for tmp in word_count_dict:
-            for key in word_count_dict.get(tmp):
+        for tmp in input_dict:
+            for key in input_dict.get(tmp):
                 word_set.add(key)
         
         # setから0の辞書を作成
@@ -204,8 +213,8 @@ class Indexer:
         
         # ワードが出現する文書数を数える
         for tmp_set in word_set: # キーワードに対して繰り返し
-            for tmp in word_count_dict:
-                for key in word_count_dict.get(tmp):
+            for tmp in input_dict:
+                for key in input_dict.get(tmp):
                     if(key==tmp_set):
                         count_word[tmp_set] += 1
                         break
@@ -213,6 +222,7 @@ class Indexer:
         #idfを計算
         for key in count_word:
             count_word[key] = math.log(count_id / count_word[key])
+        return count_word
 
         
 
