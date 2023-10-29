@@ -10,12 +10,14 @@ __version__ = '1.0.0'
 __date__ = '2023/10/25 (Created: 2023/10/25)'
 
 import json
+from operator import inv
 import os
 from re import S
 import sys
 import glob
 import MeCab
 import math
+import pickle
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
@@ -47,7 +49,8 @@ class Indexer:
             #self.make_plot(self.make_tf_list(tf_dict))
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict)
-            self.count_tf_idf(tf_dict, idf_dict)
+            inverted_index = self.count_tf_idf(tf_dict, idf_dict)
+            self.perpetuation(inverted_index, output_path)
 
 
             
@@ -240,25 +243,19 @@ class Indexer:
                 else:
                     inverted_index[word] = {id: [tf_idf]}
         return inverted_index
-        
-
-
-        
-
-            
-
-            
-        
-
-
-
-
-
-        
-
-
-        
-
+    
+    @staticmethod
+    def make_directories(path):
+        """
+        出力するディレクトリを作成する
+        """
+        os.makedirs(path, exist_ok=True)
+    
+    def perpetuation(self, inverted_index, output_path):
+        self.make_directories(output_path)
+        output_path = self.join_path(output_path, 'index.pkl')
+        with open(output_path,'wb') as f:
+            pickle.dump(inverted_index, f)
 
 def get_args():
     """
