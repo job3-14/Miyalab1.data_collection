@@ -47,6 +47,7 @@ class Indexer:
             #self.make_plot(self.make_tf_list(tf_dict))
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict)
+            self.count_tf_idf(tf_dict, idf_dict)
 
 
             
@@ -223,6 +224,24 @@ class Indexer:
         for key in count_word:
             count_word[key] = math.log(count_id / count_word[key])
         return count_word
+    
+    @staticmethod
+    def count_tf_idf(tf_dict, idf_dict):
+        """
+        tfとidfからtf-idfを計算し、転置インデックスを作成
+        return {word:{id:[tf-idf]}}
+        """
+        inverted_index = {} #転置インデックス
+        for id in tf_dict:
+            for word in tf_dict[id]:
+                tf_idf = tf_dict[id][word] * idf_dict[word]
+                if word in inverted_index:
+                    inverted_index[word][id] = [tf_idf]
+                else:
+                    inverted_index[word] = {id: [tf_idf]}
+        return inverted_index
+        
+
 
         
 
