@@ -42,19 +42,16 @@ class Indexer:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             output_path = self.join_path(self.args.output_path)   # outputパス
-            json_list = self.read_json(self.open_file_list(input_path, self.args.category)) # ファイル一覧を取得し、jsonを開き辞書にして返す
-            word_dict = self.morphological_analysis(json_list)
-            word_count_dict = self.make_word_count(word_dict)
-            tf_dict = self.count_tf(json_list, word_count_dict)
-            #self.make_plot(self.make_tf_list(tf_dict))
-            word_count_dict = self.make_word_count(word_dict)
-            idf_dict = self.count_idf(json_list, word_count_dict)
-            inverted_index = self.count_tf_idf(tf_dict, idf_dict)
-            self.perpetuation(inverted_index, output_path)
-
-
-            
-
+            json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
+            word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
+            tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
+            self.make_plot(tf_dict) # プロットを作成する
+            word_count_dict = self.make_word_count(word_dict) #値がなぜか変わる？？？？？
+            print(word_count_dict)
+            idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
+            inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
+            self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
@@ -80,12 +77,12 @@ class Indexer:
                 file_path.append(j)
         return file_path
     
-    @staticmethod
-    def read_json(path):
+    def read_json(self,input_path):
         """
         引数のパスの辞書からjsonを読み込む。
         jsonからtitleとbodyのみの辞書をリスト形式で返す。
         """
+        path = self.open_file_list(input_path, self.args.category)
         json_list = []
         for tmp_path in path:
             with open(tmp_path) as f:
@@ -178,11 +175,11 @@ class Indexer:
         cie = [[cie_x],[frequency]]
         return cie
     
-    @staticmethod
-    def make_plot(cie):
+    def make_plot(self, tf_dict):
         """
         配列からグラフを作成する
         """
+        cie = self.make_tf_list(tf_dict)
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.scatter(cie[0], cie[1])
@@ -252,6 +249,9 @@ class Indexer:
         os.makedirs(path, exist_ok=True)
     
     def perpetuation(self, inverted_index, output_path):
+        """
+        引数から入力された変数をバイナリデータとして保存する
+        """
         self.make_directories(output_path)
         output_path = self.join_path(output_path, 'index.pkl')
         with open(output_path,'wb') as f:
