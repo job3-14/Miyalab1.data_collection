@@ -102,4 +102,8 @@ list: pip
 
 prepare: pip pylint flake8 requests beautifulsoup4 mecab-python3 unidic-lite
 
+uml:
+	 pyreverse -AS -o png -p $(MODULE) ./$(TARGET)
+	 open ./classes_$(MODULE).png
+
 update: prepare
