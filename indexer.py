@@ -47,7 +47,7 @@ class Indexer:
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
             self.make_plot(tf_dict) # プロットを作成する
-            word_count_dict = self.make_word_count(word_dict) #値がなぜか変わる？？？？？
+            word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
             self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
@@ -241,6 +241,15 @@ class Indexer:
                 else:
                     inverted_index[word] = {id: [tf_idf]}
         return inverted_index
+    
+    @staticmethod
+    def make_tfidf_index(inverted_index, idf_dict, output_path):
+        """
+        tf-idfのインデックスを作成し、保存する
+        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        """
+        
+
     
     @staticmethod
     def make_directories(path):
