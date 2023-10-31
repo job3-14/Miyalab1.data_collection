@@ -48,7 +48,6 @@ class Indexer:
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
             self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict) #値がなぜか変わる？？？？？
-            print(word_count_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
             self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
@@ -183,6 +182,8 @@ class Indexer:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.scatter(cie[0], cie[1])
+        ax.set_xlabel("rank(log)")
+        ax.set_ylabel("frequency(log)")
         plt.show()
 
     @staticmethod
