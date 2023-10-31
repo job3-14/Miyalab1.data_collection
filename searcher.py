@@ -49,6 +49,16 @@ class Searcher:
         引数(*a_tuple)は複数の引数をタプルとして受け取る
         """
         return os.path.join(*a_tuple)
+    
+
+    def road_pkl(self, input_path):
+        """
+        バイナリファイルを読み込み辞書を返す。
+        """
+        path = self.join_path(input_path)
+        with open(path, mode='rb') as f:
+            dict = pickle.load(f)
+        return dict
 
 def get_args():
     """
