@@ -35,7 +35,7 @@ ifeq ($(MODULE),indexer)
 endif
 
 ifeq ($(MODULE),searcher)
-	@$(PYTHON) ./$(TARGET)
+	@$(PYTHON) ./$(TARGET) --input_path index
 endif
 	
 doc:

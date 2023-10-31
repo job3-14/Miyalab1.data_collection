@@ -37,7 +37,8 @@ class Searcher:
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path)     # inputパス
+            input_path = self.join_path(self.args.input_path, 'index.pkl')     # inputパス
+            index = self.load_pkl(input_path)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -51,12 +52,12 @@ class Searcher:
         return os.path.join(*a_tuple)
     
 
-    def road_pkl(self, input_path):
+    def load_pkl(self, input_path):
         """
         バイナリファイルを読み込み辞書を返す。
         """
-        path = self.join_path(input_path)
-        with open(path, mode='rb') as f:
+        print(input_path)
+        with open(input_path, mode='rb') as f:
             dict = pickle.load(f)
         return dict
 
