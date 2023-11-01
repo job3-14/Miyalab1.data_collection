@@ -41,16 +41,16 @@ class Indexer:
         """
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
-            output_path = self.join_path(self.args.output_path)   # outputパス
+            self.output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            self.make_plot(tf_dict) # プロットを作成する
+            #self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
-            self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
+            #self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
@@ -226,29 +226,34 @@ class Indexer:
             count_word[key] = math.log(count_id / count_word[key])
         return count_word
     
-    @staticmethod
-    def count_tf_idf(tf_dict, idf_dict):
+    def count_tf_idf(self, tf_dict, idf_dict):
         """
-        tfとidfからtf-idfを計算し、転置インデックスを作成
-        return {word:{id:[tf-idf]}}
+        tfとidfからtf-idfを計算し、インデックスを作成し保存する
+        index= {word:[{id:tf-idf}]}
+        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
         """
-        inverted_index = {} #転置インデックス
+        index = {} #転置インデックス
         for id in tf_dict:
             for word in tf_dict[id]:
                 tf_idf = tf_dict[id][word] * idf_dict[word]
-                if word in inverted_index:
-                    inverted_index[word][id] = [tf_idf]
+                if word in index:
+                    # 既にwordが存在する場合
+                    index[word].append({id:tf_idf})
                 else:
-                    inverted_index[word] = {id: [tf_idf]}
-        return inverted_index
+                    # wordが存在しない場合(新規作成)
+                    index[word] = [{id:tf_idf}]
+
+        # 単語ごとに保存する
+        for word_index in index:
+            self.perpetuation(index[word_index], self.output_path, word_index)
     
     @staticmethod
-    def make_tfidf_index(inverted_index, idf_dict, output_path):
+    def make_inverted_index(inverted_index, idf_dict, output_path):
         """
         tf-idfのインデックスを作成し、保存する
-        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
         """
-        
+        pass
+
 
     
     @staticmethod
@@ -258,14 +263,14 @@ class Indexer:
         """
         os.makedirs(path, exist_ok=True)
     
-    def perpetuation(self, inverted_index, output_path):
+    def perpetuation(self, keep_var, output_path, filename):
         """
         引数から入力された変数をバイナリデータとして保存する
         """
         self.make_directories(output_path)
-        output_path = self.join_path(output_path, 'index.pkl')
+        output_path = self.join_path(output_path, filename+'.pkl')
         with open(output_path,'wb') as f:
-            pickle.dump(inverted_index, f)
+            pickle.dump(keep_var, f)
 
 def get_args():
     """
