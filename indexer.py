@@ -251,6 +251,7 @@ class Indexer:
     def make_inverted_index(inverted_index, idf_dict, output_path):
         """
         tf-idfのインデックスを作成し、保存する
+        {word:[id]}
         """
         pass
 
