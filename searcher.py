@@ -73,6 +73,12 @@ class Searcher:
         else:
             print('文書が見つかりませんでした。')
             sys.exit()
+    
+    def rank_tf_idf():
+        """
+        ワードからtf-idfのランキングを作成し返す
+        """
+        pass
 
 def get_args():
     """
