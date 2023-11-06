@@ -4,3 +4,5 @@ __pycache__
 index/index.pkl
 docstring.txt
 classes_indexer.png
+*.pkl
+index
