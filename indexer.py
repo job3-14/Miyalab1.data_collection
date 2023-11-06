@@ -43,6 +43,8 @@ class Indexer:
             input_path = self.join_path(self.args.input_path)     # inputパス
             self.output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            #[修正](追加)  {id:カテゴリー}を作成
+            #[修正](追加)　set(カテゴリー)を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
@@ -231,6 +233,7 @@ class Indexer:
         tfとidfからtf-idfを計算し、インデックスを作成し保存する
         index= {word:[{id:tf-idf}]}
         インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        [修正]　カテゴリーごとにフォルダを分ける
         """
         index = {} #転置インデックス
         for id in tf_dict:
@@ -252,6 +255,7 @@ class Indexer:
         """
         tf-idfのインデックスを作成し、保存する
         {word:[id]}
+        [修正]カテゴリーごとにフォルダを分ける
         """
         inverted_index = {} #転置インデックス
         for tmp_id in word_dict:   # idごとに繰り返し
