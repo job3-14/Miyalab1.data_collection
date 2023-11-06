@@ -37,8 +37,10 @@ class Searcher:
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path, 'index.pkl')     # inputパス
-            index = self.load_pkl(input_path)
+            input_path = self.join_path(self.args.input_path)     # inputパス
+            inverted_index_path = self.join_path(input_path, 'inverted_index','inverted_index.pkl')     # 転置インデックスのパス
+            inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
+            print(inverted_index)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
