@@ -49,7 +49,7 @@ class Indexer:
             #self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
-            inverted_index = self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
+            self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
             self.make_inverted_index(word_dict) # 転置インデックスを作成
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
