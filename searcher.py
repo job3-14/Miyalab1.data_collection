@@ -39,8 +39,8 @@ class Searcher:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             inverted_index_path = self.join_path(input_path, 'inverted_index','inverted_index.pkl')     # 転置インデックスのパス
-            inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
-            print(inverted_index)
+            self.inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
+            self.serach('好投')
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -58,10 +58,21 @@ class Searcher:
         """
         バイナリファイルを読み込み辞書を返す。
         """
-        print(input_path)
         with open(input_path, mode='rb') as f:
             dict = pickle.load(f)
         return dict
+    
+    def serach(self, word):
+        """
+        転置インデックスからワードを検索し文書id一覧を返す。
+        見つからなければ-1を返す
+        """
+        if word in self.inverted_index:
+            print(self.inverted_index[word])
+            return self.inverted_index[word]
+        else:
+            print('文書が見つかりませんでした。')
+            sys.exit()
 
 def get_args():
     """
