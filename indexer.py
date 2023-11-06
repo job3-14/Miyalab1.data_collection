@@ -24,7 +24,6 @@ from argparse import ArgumentDefaultsHelpFormatter
 
 
 
-
 class Indexer:
     """
     転置インデックスを作成し、保存するクラス
@@ -43,8 +42,8 @@ class Indexer:
             input_path = self.join_path(self.args.input_path)     # inputパス
             self.output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
-            category_set = self.make_category_set(json_list)#[修正](追加)　set(カテゴリー)を作成
-            category_id = self.make_category_id(json_list)#[修正](追加)  {id:カテゴリー}を作成
+            category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
+            category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
@@ -52,7 +51,7 @@ class Indexer:
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
-            self.make_inverted_index(word_dict) # 転置インデックスを作成
+            self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
@@ -254,9 +253,8 @@ class Indexer:
         tfとidfからtf-idfを計算し、インデックスを作成し保存する
         index= {word:[{id:tf-idf}]}
         インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
-        [修正]　カテゴリーごとにフォルダを分ける
         """
-        index = {} #転置インデックス
+        index = {} #tfidfインデックス
         for id in tf_dict:
             for word in tf_dict[id]:
                 tf_idf = tf_dict[id][word] * idf_dict[word]
@@ -272,24 +270,29 @@ class Indexer:
             self.perpetuation(index[word_index], path, word_index)
     
     
-    def make_inverted_index(self, word_dict):
+    def make_inverted_index(self, word_dict, category_id, category_set):
         """
-        tf-idfのインデックスを作成し、保存する
+        転置インデックスを作成し、保存する
         {word:[id]}
-        [修正]カテゴリーごとにフォルダを分ける
         """
-        inverted_index = {} #転置インデックス
+        # 空の辞書を作成
+        inverted_index = {} #転置インデックス {category:{word:[id]}}
+        for tmp in category_set:
+            inverted_index[tmp] = {}
+
         for tmp_id in word_dict:   # idごとに繰り返し
+            tmp_category = category_id[tmp_id]
             for tmp_word in word_dict[tmp_id][1]:  # 各idごとのワードを取り出す
-                if tmp_word in inverted_index:
+                if tmp_word in inverted_index[tmp_category]:
                     # 既にwordが存在する場合
-                    inverted_index[tmp_word].append(tmp_id)
+                    inverted_index[tmp_category][tmp_word].append(tmp_id)
                 else:
                     # wordが存在しない場合(新規作成)
-                    inverted_index[tmp_word] = [tmp_id]
-        # 単語ごとに保存する
-        path = self.join_path(self.output_path, 'inverted_index')
-        self.perpetuation(inverted_index, path, 'inverted_index')
+                    inverted_index[tmp_category][tmp_word] = [tmp_id]
+        # カテゴリーごとに保存する
+        for tmp_category in inverted_index:
+            path = self.join_path(self.output_path, 'inverted_index', tmp_category)
+            self.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
 
 
     @staticmethod
