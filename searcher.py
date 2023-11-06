@@ -40,7 +40,7 @@ class Searcher:
             input_path = self.join_path(self.args.input_path)     # inputパス
             inverted_index_path = self.join_path(input_path, 'inverted_index','inverted_index.pkl')     # 転置インデックスのパス
             self.inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
-            self.serach('好投')
+            self.serach(self.args.search_word)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -81,6 +81,10 @@ def get_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "-i", "--input_path", type=str, required=False, default='index.pkl',
+        help="入力ファイルを指定します",
+    )
+    parser.add_argument(
+        "-w", "--search_word", type=str, required=False,
         help="入力ファイルを指定します",
     )
     return parser.parse_args()
