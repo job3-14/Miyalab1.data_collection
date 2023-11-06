@@ -43,8 +43,8 @@ class Indexer:
             input_path = self.join_path(self.args.input_path)     # inputパス
             self.output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            category_set = self.make_category_set(json_list)#[修正](追加)　set(カテゴリー)を作成
             #[修正](追加)  {id:カテゴリー}を作成
-            #[修正](追加)　set(カテゴリー)を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
@@ -65,17 +65,17 @@ class Indexer:
         return os.path.join(*a_tuple)
     
     @staticmethod
-    def open_file_list(input_path, category):
+    def open_file_list(input_path):
         """
         引数に指定されたファイルないのファイル名の配列を返す。
         input_path:　入力ディレクトリ
         category: 転置インデックスを作成する対象カテゴリ
         """
         file_path = [] # フォルダ一覧
-        for list in category:
-            path = os.path.join(input_path, list)
-            for j in glob.iglob(f'{path}/*.json'):
-                file_path.append(j)
+        path = os.path.join(input_path,'*','*')
+        files = glob.glob(path)
+        for path in files:
+            file_path.append(path)
         return file_path
     
     def read_json(self,input_path):
@@ -83,7 +83,7 @@ class Indexer:
         引数のパスの辞書からjsonを読み込む。
         jsonからtitleとbodyのみの辞書をリスト形式で返す。
         """
-        path = self.open_file_list(input_path, self.args.category)
+        path = self.open_file_list(input_path)
         json_list = []
         for tmp_path in path:
             with open(tmp_path) as f:
@@ -91,6 +91,16 @@ class Indexer:
             del  json_raw_data['url']
             json_list.append(json_raw_data)
         return json_list
+    
+    @staticmethod
+    def make_category_set(json_list):
+        """
+        output内全てのカテゴリーのセットを作成し返す
+        """
+        category_set = set()
+        for json_tmp in json_list:
+            category_set.add(json_tmp['category'])
+        return category_set
     
     @staticmethod
     def morphological_analysis(json_list):
