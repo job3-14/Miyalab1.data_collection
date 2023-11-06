@@ -95,7 +95,6 @@ class Indexer:
         """
         入力の辞書リストから形態素解析を行い単語を返す。
         return {id:[[word_list],(word_set)]}  <2>
-        !!重複
         """
         word_dict = {}
         for article in json_list:
