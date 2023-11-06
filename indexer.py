@@ -46,11 +46,11 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            self.make_plot(tf_dict) # プロットを作成する
+            #self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
-            inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
-            #self.perpetuation(inverted_index, output_path) # 転置インデックスを保存する
+            inverted_index = self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
+            self.make_inverted_index(word_dict) # 転置インデックスを作成
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
@@ -243,21 +243,31 @@ class Indexer:
                 else:
                     # wordが存在しない場合(新規作成)
                     index[word] = [{id:tf_idf}]
-
         # 単語ごとに保存する
+        path = self.join_path(self.output_path, 'idf')
         for word_index in index:
-            self.perpetuation(index[word_index], self.output_path, word_index)
+            self.perpetuation(index[word_index], path, word_index)
     
-    @staticmethod
-    def make_inverted_index(inverted_index, idf_dict, output_path):
+    
+    def make_inverted_index(self, word_dict):
         """
         tf-idfのインデックスを作成し、保存する
         {word:[id]}
         """
-        pass
+        inverted_index = {} #転置インデックス
+        for tmp_id in word_dict:   # idごとに繰り返し
+            for tmp_word in word_dict[tmp_id][1]:  # 各idごとのワードを取り出す
+                if tmp_word in inverted_index:
+                    # 既にwordが存在する場合
+                    inverted_index[tmp_word].append(tmp_id)
+                else:
+                    # wordが存在しない場合(新規作成)
+                    inverted_index[tmp_word] = [tmp_id]
+        # 単語ごとに保存する
+        path = self.join_path(self.output_path, 'inverted_index')
+        self.perpetuation(inverted_index, path, 'inverted_index')
 
 
-    
     @staticmethod
     def make_directories(path):
         """
