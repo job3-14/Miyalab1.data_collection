@@ -84,8 +84,8 @@ def get_args():
         help="入力ファイルを指定します",
     )
     parser.add_argument(
-        "-w", "--search_word", type=str, required=False,
-        help="入力ファイルを指定します",
+        "-w", "--search_word", type=str, required=True,
+        help="検索するワードを指定します",
     )
     return parser.parse_args()
 
