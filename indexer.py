@@ -46,7 +46,7 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            #self.make_plot(tf_dict) # プロットを作成する
+            self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             inverted_index = self.count_tf_idf(tf_dict, idf_dict) # 転置インデックスを作成
@@ -94,7 +94,8 @@ class Indexer:
     def morphological_analysis(json_list):
         """
         入力の辞書リストから形態素解析を行い単語を返す。
-        return {id:[[word_list],(word_set)]}
+        return {id:[[word_list],(word_set)]}  <2>
+        !!重複
         """
         word_dict = {}
         for article in json_list:
@@ -166,7 +167,7 @@ class Indexer:
         frequency = [] # 頻度
         for id in tf_dict:
             for key in tf_dict[id]:
-                frequency.append(math.log(tf_dict[id][key]))
+                frequency.append(math.log(tf_dict[id][key])) # <1>
         frequency.sort(reverse=True)
         cie_x = []
         for i in range(len(frequency)):
