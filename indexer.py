@@ -44,7 +44,7 @@ class Indexer:
             self.output_path = self.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.make_category_set(json_list)#[修正](追加)　set(カテゴリー)を作成
-            #[修正](追加)  {id:カテゴリー}を作成
+            category_id = self.make_category_id(json_list)#[修正](追加)  {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
@@ -101,6 +101,17 @@ class Indexer:
         for json_tmp in json_list:
             category_set.add(json_tmp['category'])
         return category_set
+    
+    @staticmethod
+    def make_category_id(json_list):
+        """
+        json_listからカテゴリーとidの辞書リストを作成し返す
+        return {id: category}
+        """
+        category_id = {}
+        for json_tmp in json_list:
+            category_id[json_tmp['id']] = json_tmp['category']
+        return category_id
     
     @staticmethod
     def morphological_analysis(json_list):
