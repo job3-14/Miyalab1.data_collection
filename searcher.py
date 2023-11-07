@@ -38,9 +38,9 @@ class Searcher:
         """
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
-            inverted_index_path = self.join_path(input_path, 'inverted_index','inverted_index.pkl')     # 転置インデックスのパス
-            self.inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
-            self.serach(self.args.search_word)
+            inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
+            #self.inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
+            #self.serach(self.args.search_word)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -52,6 +52,15 @@ class Searcher:
         引数(*a_tuple)は複数の引数をタプルとして受け取る
         """
         return os.path.join(*a_tuple)
+    
+    def make_path(self, input_path, input_category):
+        """
+        引数に指定されたカテゴリーの転置インデックスのパスを配列で返す
+        """
+        inverted_index_path = []
+        for tmp in input_category:
+            inverted_index_path.append(self.join_path(input_path, tmp,'inverted_index.pkl'))
+        return inverted_index_path
     
 
     def load_pkl(self, input_path):
@@ -86,12 +95,16 @@ def get_args():
     """
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        "-i", "--input_path", type=str, required=False, default='index.pkl',
-        help="入力ファイルを指定します",
+        "-i", "--input_path", type=str, required=False, default='index',
+        help="入力フォルダを指定します",
     )
     parser.add_argument(
         "-w", "--search_word", type=str, required=True,
         help="検索するワードを指定します",
+    )
+    parser.add_argument(
+        "-c", "--category", type=str, required=True, nargs="*",
+        help="カテゴリーを指定します",
     )
     return parser.parse_args()
 
