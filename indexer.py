@@ -260,10 +260,10 @@ class Indexer:
                 tf_idf = tf_dict[id][word] * idf_dict[word]
                 if word in index:
                     # 既にwordが存在する場合
-                    index[word] += {id:tf_idf}
+                    index[word] |= {id:tf_idf}
                 else:
                     # wordが存在しない場合(新規作成)
-                    index[word] = [{id:tf_idf}]
+                    index[word] = {id:tf_idf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'idf')
         for word_index in index:
