@@ -35,7 +35,7 @@ ifeq ($(MODULE),indexer)
 endif
 
 ifeq ($(MODULE),searcher)
-	@$(PYTHON) ./$(TARGET) --input_path index --search_word 位置
+	@$(PYTHON) ./$(TARGET) --input_path index --search_word 位置 --category society sports government
 endif
 	
 doc:
