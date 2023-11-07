@@ -40,7 +40,8 @@ class Searcher:
             input_path = self.join_path(self.args.input_path)     # inputパス
             inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
             self.inverted_index = self.make_inverted_index(inverted_index_path)
-            self.serach(self.args.search_word)
+            id_list = self.serach(self.args.search_word)
+            self.rank_tf_idf(self.args.search_word, id_list, input_path)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -99,17 +100,29 @@ class Searcher:
         見つからなければ-1を返す
         """
         if word in self.inverted_index:
+            print('次の文書が見つかりました :',end='')
             print(self.inverted_index[word])
+            print('')
             return self.inverted_index[word]
         else:
             print('文書が見つかりませんでした。')
             sys.exit()
     
-    def rank_tf_idf():
+
+    def rank_tf_idf(self, word, id_list, input_path):
         """
-        ワードからtf-idfのランキングを作成し返す
+        単語からから文書のtf-idfのランキングを作成し出力し返す
+        word = 検索ワード
+        id_list = 文書idのリスト
+        input_path = 入力パス
         """
-        pass
+        # ワードのif-idfを読み込む
+        idf_path = self.join_path(input_path, 'idf', word+'.pkl')  # idfのパス
+        tfidf_list = self.load_pkl(idf_path)
+        print(tfidf_list)
+        rank = []
+
+        return rank
 
 def get_args():
     """
