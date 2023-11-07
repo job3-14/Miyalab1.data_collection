@@ -39,8 +39,8 @@ class Searcher:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
-            #self.inverted_index = self.load_pkl(inverted_index_path) # 転置インデックスをロード
-            #self.serach(self.args.search_word)
+            self.inverted_index = self.make_inverted_index(inverted_index_path)
+            self.serach(self.args.search_word)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -59,8 +59,30 @@ class Searcher:
         """
         inverted_index_path = []
         for tmp in input_category:
-            inverted_index_path.append(self.join_path(input_path, tmp,'inverted_index.pkl'))
+            inverted_index_path.append(self.join_path(input_path, 'inverted_index', tmp,'inverted_index.pkl'))
         return inverted_index_path
+    
+    def make_inverted_index(self,inverted_index_path):
+        """
+        バイナリファイルを読み込み転置インデックスを結合し返す
+        """
+        # 転置インデックスを読み込み配列に入れる
+        inverted_index_list = []
+        for tmp_index_path in inverted_index_path:
+            inverted_index_list.append(self.load_pkl(tmp_index_path))
+
+        # 転置インデックスを結合する
+        inverted_index = {}
+        for tmp_index in inverted_index_list:
+            for word in tmp_index:
+                # キーが存在した場合
+                if word in inverted_index:
+                    inverted_index[word] += tmp_index[word]
+                # キーが存在しなかった場合
+                else:
+                    inverted_index[word] = tmp_index[word]
+        return inverted_index
+        
     
 
     def load_pkl(self, input_path):
