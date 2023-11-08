@@ -51,6 +51,9 @@ class Searcher:
             # AND検索
             elif mode == 'and':
                 self.serach_and(serach_word)
+            # OR検索
+            elif mode == 'or':
+                self.serach_or(serach_word)
 
 
         except KeyboardInterrupt:
@@ -127,6 +130,7 @@ class Searcher:
         """
         # 38 速報
         index = []
+        result = set()
         if word[0] in self.inverted_index and word[1] in self.inverted_index:
             index.append(self.inverted_index[word[0]])
             index.append(self.inverted_index[word[1]])
@@ -139,6 +143,16 @@ class Searcher:
             else:
                 print('文書が見つかりませんでした。')
                 sys.exit()
+        else:
+            print('文書が見つかりませんでした。')
+            sys.exit()
+
+    def serach_or(self, serach_word):
+        """
+        転置インデックスからワードをAND検索し文書id一覧を返す。
+        見つからなければプログラムを終了する
+        """
+        pass
 
 
         
@@ -199,6 +213,8 @@ class Searcher:
             print('{: ^15}'.format(tmp_tuple[0]), end=' ')
             print(tmp_tuple[1])
         print('')
+
+
             
 
 def get_args():
