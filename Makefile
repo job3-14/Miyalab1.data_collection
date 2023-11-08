@@ -2,7 +2,7 @@ PYTHON	= python
 PYDOC	= pydoc
 PYCS	= $(shell find . -name "*.pyc")
 PYCACHE	= $(shell find . -name "__pycache__")
-MODULE	= indexer
+MODULE	= searcher
 TARGET	= $(MODULE).py
 ARCHIVE	= $(shell basename `pwd`)
 PYLINTRST	= pylintresult.txt
@@ -32,6 +32,10 @@ endif
 
 ifeq ($(MODULE),indexer)
 	@$(PYTHON) ./$(TARGET) --category society sports
+endif
+
+ifeq ($(MODULE),searcher)
+	@$(PYTHON) ./$(TARGET) --input_path index --search_word 38 速報  --category society sports government --mode or
 endif
 	
 doc:
