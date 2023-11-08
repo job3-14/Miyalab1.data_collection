@@ -32,6 +32,7 @@ class Searcher:
         """
         self.args = args
 
+
     def run(self):
         """
         インデックスの作成および保存を行う
@@ -39,11 +40,18 @@ class Searcher:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             serach_word = self.args.search_word
+            mode = self.args.mode
             inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
             self.inverted_index = self.make_inverted_index(inverted_index_path)
-            id_list = self.serach(serach_word)
-            self.rank_tf_idf(serach_word, id_list, input_path)
-            self.rank_tf(serach_word, id_list, input_path)
+            # 検索モード:single
+            if mode == 'single':
+                id_list = self.serach(serach_word[0])
+                self.rank_tf_idf(serach_word[0], id_list, input_path)
+                self.rank_tf(serach_word[0], id_list, input_path)
+            # AND検索
+            elif mode == 'and':
+                self.serach_and(serach_word)
+
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -99,7 +107,7 @@ class Searcher:
     def serach(self, word):
         """
         転置インデックスからワードを検索し文書id一覧を返す。
-        見つからなければ-1を返す
+        見つからなければプログラムを終了する
         """
         if word in self.inverted_index:
             print(len(self.inverted_index[word]),end='')
@@ -110,6 +118,30 @@ class Searcher:
         else:
             print('文書が見つかりませんでした。')
             sys.exit()
+
+    
+    def serach_and(self, word):
+        """
+        転置インデックスからワードをAND検索し文書id一覧を返す。
+        見つからなければプログラムを終了する
+        """
+        # 38 速報
+        index = []
+        if word[0] in self.inverted_index and word[1] in self.inverted_index:
+            index.append(self.inverted_index[word[0]])
+            index.append(self.inverted_index[word[1]])
+            result = set(index[0]) & set(index[1])
+            if len(result) >= 1:
+                print(len(result),end='')
+                print('個の文書が見つかりました :',end='')
+                print(result)
+                return result
+            else:
+                print('文書が見つかりませんでした。')
+                sys.exit()
+
+
+        
     
 
     def rank_tf_idf(self, word, id_list, input_path):
@@ -179,13 +211,18 @@ def get_args():
         help="入力フォルダを指定します",
     )
     parser.add_argument(
-        "-w", "--search_word", type=str, required=True,
+        "-w", "--search_word", type=str, required=True, nargs="*",
         help="検索するワードを指定します",
     )
     parser.add_argument(
         "-c", "--category", type=str, required=True, nargs="*",
         help="カテゴリーを指定します",
     )
+    parser.add_argument(
+        "-m", "--mode", type=str, required=False, default='single',
+        help="検索モードを指定します。single=1つのワードの検索 and=2ワードに対してand検索 or=2ワードに対してand検索",
+    )
+
     return parser.parse_args()
 
 
