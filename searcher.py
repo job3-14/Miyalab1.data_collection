@@ -147,12 +147,28 @@ class Searcher:
             print('文書が見つかりませんでした。')
             sys.exit()
 
-    def serach_or(self, serach_word):
+    def serach_or(self, word):
         """
-        転置インデックスからワードをAND検索し文書id一覧を返す。
+        転置インデックスからワードをOR検索し文書id一覧を返す。
         見つからなければプログラムを終了する
         """
-        pass
+        index = []
+        result = set()
+        if word[0] in self.inverted_index or word[1] in self.inverted_index:
+            index.append(self.inverted_index[word[0]])
+            index.append(self.inverted_index[word[1]])
+            result = set(index[0]) | set(index[1])
+            if len(result) >= 1:
+                print(len(result),end='')
+                print('個の文書が見つかりました :',end='')
+                print(result)
+                return result
+            else:
+                print('文書が見つかりませんでした。')
+                sys.exit()
+        else:
+            print('文書が見つかりませんでした。')
+            sys.exit()
 
 
         
