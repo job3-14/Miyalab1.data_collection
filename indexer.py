@@ -51,6 +51,7 @@ class Indexer:
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
+            self.make_tf(tf_dict)
             self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -266,6 +267,28 @@ class Indexer:
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'idf')
+        for word_index in index:
+            self.perpetuation(index[word_index], path, word_index)
+
+    
+    def make_tf(self, tf_dict):
+        """
+        tfとidfからtf-idfを計算し、インデックスを作成し保存する
+        index= {word:[{id:tf-idf}]}
+        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        """
+        index = {} #tfidfインデックス
+        for id in tf_dict:
+            for word in tf_dict[id]:
+                tf = tf_dict[id][word]
+                if word in index:
+                    # 既にwordが存在する場合
+                    index[word] |= {id:tf}
+                else:
+                    # wordが存在しない場合(新規作成)
+                    index[word] = {id:tf}
+        # 単語ごとに保存する
+        path = self.join_path(self.output_path, 'tf')
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
     
