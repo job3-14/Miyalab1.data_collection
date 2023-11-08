@@ -100,7 +100,8 @@ class Searcher:
         見つからなければ-1を返す
         """
         if word in self.inverted_index:
-            print('次の文書が見つかりました :',end='')
+            print(len(self.inverted_index[word]),end='')
+            print('個の文書が見つかりました :',end='')
             print(self.inverted_index[word])
             print('')
             return self.inverted_index[word]
@@ -111,18 +112,31 @@ class Searcher:
 
     def rank_tf_idf(self, word, id_list, input_path):
         """
-        単語からから文書のtf-idfのランキングを作成し出力し返す
+        単語からから文書のtf-idfのランキングを作成し出力する
         word = 検索ワード
-        id_list = 文書idのリスト
+        id_list = 該当する文書idのリスト
         input_path = 入力パス
         """
         # ワードのif-idfを読み込む
         idf_path = self.join_path(input_path, 'idf', word+'.pkl')  # idfのパス
-        tfidf_list = self.load_pkl(idf_path)
-        print(tfidf_list)
-        rank = []
+        load_tfidf_list = self.load_pkl(idf_path)
 
-        return rank
+        # 該当するtf-idfのみを抽出
+        tfidf_list = {} # 該当する文書のifidfの辞書
+        for tmp_id in load_tfidf_list:
+            if tmp_id in id_list:
+                tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
+
+        # tf-idfでランキングを作成する(ランク高い順でidの辞書を作成
+        score_sorted = sorted(tfidf_list.items(), reverse=True, key=lambda x:x[1])
+        print('マッチした文章をtd-idfでランキングします')
+        i = 0
+        for tmp_tuple in score_sorted:
+            i += 1
+            print('{: ^5}'.format(i), end=' ')
+            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
+            print(tmp_tuple[1])
+            
 
 def get_args():
     """
