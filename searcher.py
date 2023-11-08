@@ -38,10 +38,12 @@ class Searcher:
         """
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
+            serach_word = self.args.search_word
             inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
             self.inverted_index = self.make_inverted_index(inverted_index_path)
-            id_list = self.serach(self.args.search_word)
-            self.rank_tf_idf(self.args.search_word, id_list, input_path)
+            id_list = self.serach(serach_word)
+            self.rank_tf_idf(serach_word, id_list, input_path)
+            self.rank_tf(serach_word, id_list, input_path)
 
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
@@ -136,6 +138,35 @@ class Searcher:
             print('{: ^5}'.format(i), end=' ')
             print('{: ^15}'.format(tmp_tuple[0]), end=' ')
             print(tmp_tuple[1])
+        print('')
+
+    def rank_tf(self, word, id_list, input_path):
+        """
+        単語からから文書のtfのランキングを作成し出力する
+        word = 検索ワード
+        id_list = 該当する文書idのリスト
+        input_path = 入力パス
+        """
+        # ワードのtfを読み込む
+        tf_path = self.join_path(input_path, 'tf', word+'.pkl')  # idfのパス
+        load_tf_list = self.load_pkl(tf_path)
+
+        # 該当するtfのみを抽出
+        tf_list = {} # 該当する文書のifidfの辞書
+        for tmp_id in load_tf_list:
+            if tmp_id in id_list:
+                tf_list[tmp_id] = load_tf_list[tmp_id]
+
+        # tfでランキングを作成する(ランク高い順でidの辞書を作成
+        score_sorted = sorted(tf_list.items(), reverse=True, key=lambda x:x[1])
+        print('マッチした文章をtfでランキングします')
+        i = 0
+        for tmp_tuple in score_sorted:
+            i += 1
+            print('{: ^5}'.format(i), end=' ')
+            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
+            print(tmp_tuple[1])
+        print('')
             
 
 def get_args():
