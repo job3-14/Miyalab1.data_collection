@@ -47,7 +47,7 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            #self.make_plot(tf_dict) # プロットを作成する
+            self.make_plot(tf_dict) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
@@ -253,7 +253,7 @@ class Indexer:
         """
         tfとidfからtf-idfを計算し、インデックスを作成し保存する
         index= {word:[{id:tf-idf}]}
-        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        インデックスの形式 ファイル名:{word}.pkl -> {id:idf} <3>
         """
         index = {} #tfidfインデックス
         for id in tf_dict:
