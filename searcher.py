@@ -193,7 +193,7 @@ class Searcher:
 
         # tf-idfでランキングを作成する(ランク高い順でidの辞書を作成
         score_sorted = sorted(tfidf_list.items(), reverse=True, key=lambda x:x[1])
-        print('マッチした文章をtd-idfでランキングします')
+        print('マッチした文章をtf-idfでランキングします')
         i = 0
         for tmp_tuple in score_sorted:
             i += 1
