@@ -31,7 +31,7 @@ ifeq ($(MODULE),crawler)
 endif
 
 ifeq ($(MODULE),indexer)
-	@$(PYTHON) ./$(TARGET) --category society sports
+	@$(PYTHON) ./$(TARGET) --category society sports government
 endif
 	
 doc:
