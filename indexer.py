@@ -47,7 +47,8 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            self.make_plot(tf_dict) # プロットを作成する
+            frequency = self.make_frequency(self.make_word_count(word_dict)) # 頻度を作成する
+            self.make_plot(frequency) # プロットを作成する
             word_count_dict = self.make_word_count(word_dict)
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
@@ -141,7 +142,7 @@ class Indexer:
     def make_word_count(word_dict):
         """
         ワードごとに回数リストを作成する。
-        return {id:{word:回数}}
+        return {id:{word:回数}}<3>
         """
         word_count_dict = {}
         for article in word_dict:       # 全てのidで繰り返し
@@ -182,26 +183,23 @@ class Indexer:
         return input_dict
     
     @staticmethod
-    def make_tf_list(tf_dict):
+    def make_frequency_list(frequency):
         """
         tf値を頻度とその降順のx,yの配列で返す
         """
-        frequency = [] # 頻度
-        for id in tf_dict:
-            for key in tf_dict[id]:
-                frequency.append(math.log(tf_dict[id][key])) # <1>
-        frequency.sort(reverse=True)
         cie_x = []
         for i in range(len(frequency)):
+            frequency[i] = math.log(frequency[i])
             cie_x.append(math.log(i+1))
+        frequency.sort(reverse=True)
         cie = [[cie_x],[frequency]]
         return cie
     
-    def make_plot(self, tf_dict):
+    def make_plot(self, frequency):
         """
         配列からグラフを作成する
         """
-        cie = self.make_tf_list(tf_dict)
+        cie = self.make_frequency_list(frequency)
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.scatter(cie[0], cie[1])
@@ -291,6 +289,32 @@ class Indexer:
         path = self.join_path(self.output_path, 'tf')
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
+
+    @staticmethod
+    def make_frequency(word_count_dict):
+        """
+        プロット用の頻度を計算し返します。
+        return frequency[頻度,,,] (降順)
+        """
+        frequency = [] #頻度
+        word_count = {} #単語:回数
+        all_count = 0 # 全体の回数
+
+        # ワードごとの回数を集計する
+        for tmp_id in word_count_dict:
+            for tmp_word in word_count_dict[tmp_id]:
+                tmp_count = word_count_dict[tmp_id][tmp_word]
+                if tmp_word in word_count:
+                    word_count[tmp_word] += tmp_count
+                else:
+                    word_count[tmp_word] = tmp_count
+                all_count += tmp_count
+        
+        # 辞書から頻度を作成
+        for tmp_id in word_count:
+            frequency.append(word_count[tmp_id] / all_count)
+        return frequency
+        
     
     
     def make_inverted_index(self, word_dict, category_id, category_set):
