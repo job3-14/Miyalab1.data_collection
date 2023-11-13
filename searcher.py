@@ -79,6 +79,7 @@ class Searcher:
     def make_inverted_index(self,inverted_index_path):
         """
         バイナリファイルを読み込み転置インデックスを結合し返す
+        setに変える
         """
         # 転置インデックスを読み込み配列に入れる
         inverted_index_list = []
