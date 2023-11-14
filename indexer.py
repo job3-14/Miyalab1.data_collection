@@ -19,6 +19,7 @@ import MeCab
 import math
 import pickle
 import copy
+import shutil
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
@@ -262,6 +263,7 @@ class Indexer:
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'idf')
+        if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
 
@@ -284,6 +286,7 @@ class Indexer:
                     index[word] = {id:tf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'tf')
+        if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
 
@@ -337,7 +340,6 @@ class Indexer:
                 else:
                     # wordが存在しない場合(新規作成)
                     inverted_index[tmp_category][tmp_word] = {tmp_id}
-                    print('!')
 
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
