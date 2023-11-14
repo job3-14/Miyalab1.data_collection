@@ -355,6 +355,16 @@ class Indexer:
         with open(output_path,'wb') as f:
             pickle.dump(keep_var, f)
 
+    @staticmethod
+    def open_pkl(path):
+        """
+        引数からpklファイルを読み込み返す
+        """
+        with open(path, 'rb') as p:
+            l = pickle.load(p)
+        return l
+
+
 def get_args():
     """
     コマンドライン引数を応答します
