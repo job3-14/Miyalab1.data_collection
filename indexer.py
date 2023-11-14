@@ -18,6 +18,8 @@ import glob
 import MeCab
 import math
 import pickle
+import copy
+import shutil
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
@@ -41,18 +43,23 @@ class Indexer:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             self.output_path = self.join_path(self.args.output_path)   # outputパス
-            json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            json_list = self.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
             category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
-            tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            self.make_plot(tf_dict) # プロットを作成する
-            word_count_dict = self.make_word_count(word_dict)
+            tf_dict = self.count_tf(word_count_dict) #tf値を計算する
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
+            
+            ### 保存
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
             self.make_tf(tf_dict)
             self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
+
+            ### グラフ作成
+            if self.args.plot:
+                frequency = self.make_frequency(word_count_dict) # 頻度を作成する
+                self.make_plot(frequency) # プロットを作成する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
@@ -65,25 +72,26 @@ class Indexer:
         return os.path.join(*a_tuple)
     
     @staticmethod
-    def open_file_list(input_path):
+    def open_file_list(input_path, input_category):
         """
         引数に指定されたファイルないのファイル名の配列を返す。
         input_path:　入力ディレクトリ
-        category: 転置インデックスを作成する対象カテゴリ
+        input_category: 転置インデックスを作成する対象カテゴリ
         """
         file_path = [] # フォルダ一覧
-        path = os.path.join(input_path,'*','*')
-        files = glob.glob(path)
-        for path in files:
-            file_path.append(path)
+        for tmp_category in input_category:
+            path = os.path.join(input_path,tmp_category,'*.json')
+            files = glob.glob(path)
+            for path in files:
+                file_path.append(path)
         return file_path
     
-    def read_json(self,input_path):
+    def read_json(self,input_path, input_category):
         """
         引数のパスの辞書からjsonを読み込む。
         jsonからtitleとbodyのみの辞書をリスト形式で返す。
         """
-        path = self.open_file_list(input_path)
+        path = self.open_file_list(input_path, input_category)
         json_list = []
         for tmp_path in path:
             with open(tmp_path) as f:
@@ -141,7 +149,7 @@ class Indexer:
     def make_word_count(word_dict):
         """
         ワードごとに回数リストを作成する。
-        return {id:{word:回数}}
+        return {id:{word:回数}}<3>
         """
         word_count_dict = {}
         for article in word_dict:       # 全てのidで繰り返し
@@ -152,56 +160,44 @@ class Indexer:
         return word_count_dict
 
     @staticmethod
-    def count_tf(json_list, word_count_dict, *category):
+    def count_tf(word_count_dict):
         """
         tfを計算を行う
         入力のカテゴリーのもので計算を行う
-        引数 json_list, word_count_dict, *カテゴリー
         カテゴリーの引数がない場合は全てのカテゴリーで実行
         return {id:{word:tf}}
         参考：https://atmarkit.itmedia.co.jp/ait/articles/2112/23/news028.html
         """
-        input_dict = {}
-        if(len(category)==0):
-            input_dict = word_count_dict
-        else:
-            for tmp_json in json_list: #全ての入力を結合
-                if(tmp_json['category'] in category):
-                    tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
-                    input_dict |= tmp_dict
         all_count_dict = {} #文章内の単語数を計算
-        for id in input_dict:
+        tf_dict = copy.deepcopy(word_count_dict) # 参照渡しを回避
+        for id in word_count_dict:
             count = 0
-            for key in input_dict[id]:
-                count += input_dict[id][key]
+            for key in word_count_dict[id]:
+                count += word_count_dict[id][key]
             all_count_dict[id] = count
-        
-        for id in input_dict:
-            for key in input_dict[id]:
-                input_dict[id][key] = input_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
-        return input_dict
+        for id in word_count_dict:
+            for key in word_count_dict[id]:
+                tf_dict[id][key] = word_count_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
+        return tf_dict
     
     @staticmethod
-    def make_tf_list(tf_dict):
+    def make_frequency_list(frequency):
         """
         tf値を頻度とその降順のx,yの配列で返す
         """
-        frequency = [] # 頻度
-        for id in tf_dict:
-            for key in tf_dict[id]:
-                frequency.append(math.log(tf_dict[id][key])) # <1>
-        frequency.sort(reverse=True)
         cie_x = []
         for i in range(len(frequency)):
+            frequency[i] = math.log(frequency[i])
             cie_x.append(math.log(i+1))
+        frequency.sort(reverse=True)
         cie = [[cie_x],[frequency]]
         return cie
     
-    def make_plot(self, tf_dict):
+    def make_plot(self, frequency):
         """
         配列からグラフを作成する
         """
-        cie = self.make_tf_list(tf_dict)
+        cie = self.make_frequency_list(frequency)
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.scatter(cie[0], cie[1])
@@ -267,15 +263,16 @@ class Indexer:
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'idf')
+        if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
 
     
     def make_tf(self, tf_dict):
         """
-        tfとidfからtf-idfを計算し、インデックスを作成し保存する
-        index= {word:[{id:tf-idf}]}
-        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        tfインデックスを作成し保存する
+        index= {word:[{id:tf}]}
+        インデックスの形式 ファイル名:{word}.pkl -> {id:[tf]}
         """
         index = {} #tfidfインデックス
         for id in tf_dict:
@@ -289,29 +286,62 @@ class Indexer:
                     index[word] = {id:tf}
         # 単語ごとに保存する
         path = self.join_path(self.output_path, 'tf')
+        if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
             self.perpetuation(index[word_index], path, word_index)
+
+    @staticmethod
+    def make_frequency(word_count_dict):
+        """
+        プロット用の頻度を計算し返します。
+        return frequency[頻度,,,] (降順)
+        """
+        frequency = [] #頻度
+        word_count = {} #単語:回数
+        all_count = 0 # 全体の回数
+
+        # ワードごとの回数を集計する
+        for tmp_id in word_count_dict:
+            for tmp_word in word_count_dict[tmp_id]:
+                tmp_count = word_count_dict[tmp_id][tmp_word]
+                if tmp_word in word_count:
+                    word_count[tmp_word] += tmp_count
+                else:
+                    word_count[tmp_word] = tmp_count
+                all_count += tmp_count
+        
+        # 辞書から頻度を作成
+        for tmp_id in word_count:
+            frequency.append(word_count[tmp_id] / all_count)
+        return frequency
+        
     
     
     def make_inverted_index(self, word_dict, category_id, category_set):
         """
         転置インデックスを作成し、保存する
-        {word:[id]}
+        {word:(id)}
         """
-        # 空の辞書を作成
-        inverted_index = {} #転置インデックス {category:{word:[id]}}
-        for tmp in category_set:
-            inverted_index[tmp] = {}
+        # 辞書を作成(ファイルがあれば読み込み)
+        inverted_index = {} #転置インデックス {category:{word:(id)}}
+        for tmp_category in category_set:
+            path = self.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
+            if os.path.isfile(path):
+                inverted_index[tmp_category] = self.open_pkl(path)
+            else:
+                inverted_index[tmp_category] = {}
 
         for tmp_id in word_dict:   # idごとに繰り返し
             tmp_category = category_id[tmp_id]
             for tmp_word in word_dict[tmp_id][1]:  # 各idごとのワードを取り出す
                 if tmp_word in inverted_index[tmp_category]:
                     # 既にwordが存在する場合
-                    inverted_index[tmp_category][tmp_word].append(tmp_id)
+                    inverted_index[tmp_category][tmp_word].add(tmp_id)
                 else:
                     # wordが存在しない場合(新規作成)
-                    inverted_index[tmp_category][tmp_word] = [tmp_id]
+                    inverted_index[tmp_category][tmp_word] = {tmp_id}
+            inverted_index[tmp_category].sort() # 昇順にソート
+
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
             path = self.join_path(self.output_path, 'inverted_index', tmp_category)
@@ -334,6 +364,16 @@ class Indexer:
         with open(output_path,'wb') as f:
             pickle.dump(keep_var, f)
 
+    @staticmethod
+    def open_pkl(path):
+        """
+        引数からpklファイルを読み込み返す
+        """
+        with open(path, 'rb') as p:
+            l = pickle.load(p)
+        return l
+
+
 def get_args():
     """
     コマンドライン引数を応答します
@@ -350,6 +390,10 @@ def get_args():
     parser.add_argument(
         "-i", "--input_path", type=str, required=False, default='output',
         help="入力ディレクトリ名を指定します",
+    )
+    parser.add_argument(
+        "-p", "--plot",action='store_true',
+        help="このオプションを付けるとグラフをプロットします"
     )
     return parser.parse_args()
 
