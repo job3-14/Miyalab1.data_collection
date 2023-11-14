@@ -114,14 +114,10 @@ class Searcher:
         見つからなければプログラムを終了する
         """
         if word in self.inverted_index:
-            print(len(self.inverted_index[word]),end='')
-            print('個の文書が見つかりました :',end='')
-            print(self.inverted_index[word])
-            print('')
+            self.print_result(self.inverted_index[word])
             return self.inverted_index[word]
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
 
     
     def serach_and(self, word):
@@ -137,16 +133,12 @@ class Searcher:
                     result.add(tmp_id)
                     continue
             if len(result) >= 1:
-                print(len(result),end='')
-                print('個の文書が見つかりました :',end='')
-                print(result)
+                self.print_result(result)
                 return result
             else:
-                print('文書が見つかりませんでした。')
-                sys.exit()
+                self.not_fund()
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
 
     def serach_or(self, word):
         """
@@ -158,16 +150,30 @@ class Searcher:
             for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
             for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
             if len(result) >= 1:
-                print(len(result),end='')
-                print('個の文書が見つかりました :',end='')
-                print(result)
+                self.print_result(result)
                 return result
             else:
-                print('文書が見つかりませんでした。')
-                sys.exit()
+                self.not_fund()
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
+
+    @staticmethod
+    def not_fund():
+        """
+        文書が見つからないことを表示し、プログラムを終了します
+        """
+        print('文書が見つかりませんでした。')
+        sys.exit()
+    
+    @staticmethod
+    def print_result(result):
+        """
+        入力されたセットから結果を表示します。
+        """
+        print(len(result),end='')
+        print('個の文書が見つかりました :',end='')
+        print(result)
+
 
 
         
