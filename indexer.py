@@ -18,6 +18,7 @@ import glob
 import MeCab
 import math
 import pickle
+import copy
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
@@ -46,11 +47,12 @@ class Indexer:
             category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
-            tf_dict = self.count_tf(json_list, word_count_dict) #tf値を計算する
-            frequency = self.make_frequency(self.make_word_count(word_dict)) # 頻度を作成する
-            self.make_plot(frequency) # プロットを作成する
-            word_count_dict = self.make_word_count(word_dict)
+            tf_dict = self.count_tf(word_count_dict) #tf値を計算する
+            # frequency = self.make_frequency(word_count_dict) # 頻度を作成する
+            # self.make_plot(frequency) # プロットを作成する
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
+            
+            ### 保存
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
             self.make_tf(tf_dict)
             self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
@@ -154,34 +156,25 @@ class Indexer:
         return word_count_dict
 
     @staticmethod
-    def count_tf(json_list, word_count_dict, *category):
+    def count_tf(word_count_dict):
         """
         tfを計算を行う
         入力のカテゴリーのもので計算を行う
-        引数 json_list, word_count_dict, *カテゴリー
         カテゴリーの引数がない場合は全てのカテゴリーで実行
         return {id:{word:tf}}
         参考：https://atmarkit.itmedia.co.jp/ait/articles/2112/23/news028.html
         """
-        input_dict = {}
-        if(len(category)==0):
-            input_dict = word_count_dict
-        else:
-            for tmp_json in json_list: #全ての入力を結合
-                if(tmp_json['category'] in category):
-                    tmp_dict = {tmp_json['id']:word_count_dict.get(tmp_json['id'])}
-                    input_dict |= tmp_dict
         all_count_dict = {} #文章内の単語数を計算
-        for id in input_dict:
+        tf_dict = copy.deepcopy(word_count_dict) # 参照渡しを回避
+        for id in word_count_dict:
             count = 0
-            for key in input_dict[id]:
-                count += input_dict[id][key]
+            for key in word_count_dict[id]:
+                count += word_count_dict[id][key]
             all_count_dict[id] = count
-        
-        for id in input_dict:
-            for key in input_dict[id]:
-                input_dict[id][key] = input_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
-        return input_dict
+        for id in word_count_dict:
+            for key in word_count_dict[id]:
+                tf_dict[id][key] = word_count_dict[id][key] / all_count_dict[id] # tfを計算する。文書内での出現回数 / 文章ないの個数出現回数
+        return tf_dict
     
     @staticmethod
     def make_frequency_list(frequency):
@@ -272,9 +265,9 @@ class Indexer:
     
     def make_tf(self, tf_dict):
         """
-        tfとidfからtf-idfを計算し、インデックスを作成し保存する
-        index= {word:[{id:tf-idf}]}
-        インデックスの形式 ファイル名:{word}.pkl -> {id:idf}
+        tfインデックスを作成し保存する
+        index= {word:[{id:tf}]}
+        インデックスの形式 ファイル名:{word}.pkl -> {id:[tf]}
         """
         index = {} #tfidfインデックス
         for id in tf_dict:
