@@ -3,6 +3,5 @@ __pycache__
 .DS_Store
 index/index.pkl
 docstring.txt
-classes_indexer.png
 *.pkl
 index
