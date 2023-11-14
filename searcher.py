@@ -92,7 +92,7 @@ class Searcher:
             for word in tmp_index:
                 # キーが存在した場合
                 if word in inverted_index:
-                    inverted_index[word] += tmp_index[word]
+                    inverted_index[word] |= tmp_index[word]
                 # キーが存在しなかった場合
                 else:
                     inverted_index[word] = tmp_index[word]
@@ -192,16 +192,7 @@ class Searcher:
             if tmp_id in id_list:
                 tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
 
-        # tf-idfでランキングを作成する(ランク高い順でidの辞書を作成
-        score_sorted = sorted(tfidf_list.items(), reverse=True, key=lambda x:x[1])
-        print('マッチした文章をtf-idfでランキングします')
-        i = 0
-        for tmp_tuple in score_sorted:
-            i += 1
-            print('{: ^5}'.format(i), end=' ')
-            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
-            print(tmp_tuple[1])
-        print('')
+        self.rank(tfidf_list, 'マッチした文章をtf-idfでランキングします')
 
     def rank_tf(self, word, id_list, input_path):
         """
@@ -220,9 +211,16 @@ class Searcher:
             if tmp_id in id_list:
                 tf_list[tmp_id] = load_tf_list[tmp_id]
 
-        # tfでランキングを作成する(ランク高い順でidの辞書を作成
-        score_sorted = sorted(tf_list.items(), reverse=True, key=lambda x:x[1])
-        print('マッチした文章をtfでランキングします')
+        self.rank(tf_list, 'マッチした文章をtfでランキングします')
+
+    @staticmethod
+    def rank(dict, detail='ランキング表示します'):
+        """
+        入力の値からランキング表示します
+        input: {文書id:値}, 表示するテキスト
+        """
+        score_sorted = sorted(dict.items(), reverse=True, key=lambda x:x[1]) # ランク高い順でidの辞書を作成
+        print(detail)
         i = 0
         for tmp_tuple in score_sorted:
             i += 1
@@ -230,6 +228,8 @@ class Searcher:
             print('{: ^15}'.format(tmp_tuple[0]), end=' ')
             print(tmp_tuple[1])
         print('')
+
+
 
 
             
