@@ -48,15 +48,17 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(word_count_dict) #tf値を計算する
-            if self.args.plot:
-                frequency = self.make_frequency(word_count_dict) # 頻度を作成する
-                self.make_plot(frequency) # プロットを作成する
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
-
+            
             ### 保存
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
             self.make_tf(tf_dict)
             self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
+
+            ### グラフ作成
+            if self.args.plot:
+                frequency = self.make_frequency(word_count_dict) # 頻度を作成する
+                self.make_plot(frequency) # プロットを作成する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
     
