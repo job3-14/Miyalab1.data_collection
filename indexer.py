@@ -340,6 +340,7 @@ class Indexer:
                 else:
                     # wordが存在しない場合(新規作成)
                     inverted_index[tmp_category][tmp_word] = {tmp_id}
+            inverted_index[tmp_category].sort() # 昇順にソート
 
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
