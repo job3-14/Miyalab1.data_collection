@@ -130,12 +130,12 @@ class Searcher:
         見つからなければプログラムを終了する
         """
         # 38 速報
-        index = []
         result = set()
         if word[0] in self.inverted_index and word[1] in self.inverted_index:
-            index.append(self.inverted_index[word[0]])
-            index.append(self.inverted_index[word[1]])
-            result = set(index[0]) & set(index[1])
+            for tmp_id in self.inverted_index[word[0]]:
+                if tmp_id in self.inverted_index[word[1]]: 
+                    result.add(tmp_id)
+                    continue
             if len(result) >= 1:
                 print(len(result),end='')
                 print('個の文書が見つかりました :',end='')
@@ -153,12 +153,10 @@ class Searcher:
         転置インデックスからワードをOR検索し文書id一覧を返す。
         見つからなければプログラムを終了する
         """
-        index = []
         result = set()
         if word[0] in self.inverted_index or word[1] in self.inverted_index:
-            index.append(self.inverted_index[word[0]])
-            index.append(self.inverted_index[word[1]])
-            result = set(index[0]) | set(index[1])
+            for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
+            for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
             if len(result) >= 1:
                 print(len(result),end='')
                 print('個の文書が見つかりました :',end='')
