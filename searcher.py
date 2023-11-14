@@ -15,7 +15,6 @@ import os
 from re import S
 import sys
 import pickle
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 
