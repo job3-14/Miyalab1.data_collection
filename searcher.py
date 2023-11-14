@@ -15,7 +15,6 @@ import os
 from re import S
 import sys
 import pickle
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 
@@ -79,6 +78,7 @@ class Searcher:
     def make_inverted_index(self,inverted_index_path):
         """
         バイナリファイルを読み込み転置インデックスを結合し返す
+        setに変える
         """
         # 転置インデックスを読み込み配列に入れる
         inverted_index_list = []
@@ -91,7 +91,7 @@ class Searcher:
             for word in tmp_index:
                 # キーが存在した場合
                 if word in inverted_index:
-                    inverted_index[word] += tmp_index[word]
+                    inverted_index[word] |= tmp_index[word]
                 # キーが存在しなかった場合
                 else:
                     inverted_index[word] = tmp_index[word]
@@ -113,14 +113,10 @@ class Searcher:
         見つからなければプログラムを終了する
         """
         if word in self.inverted_index:
-            print(len(self.inverted_index[word]),end='')
-            print('個の文書が見つかりました :',end='')
-            print(self.inverted_index[word])
-            print('')
+            self.print_result(self.inverted_index[word])
             return self.inverted_index[word]
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
 
     
     def serach_and(self, word):
@@ -129,46 +125,54 @@ class Searcher:
         見つからなければプログラムを終了する
         """
         # 38 速報
-        index = []
         result = set()
         if word[0] in self.inverted_index and word[1] in self.inverted_index:
-            index.append(self.inverted_index[word[0]])
-            index.append(self.inverted_index[word[1]])
-            result = set(index[0]) & set(index[1])
+            for tmp_id in self.inverted_index[word[0]]:
+                if tmp_id in self.inverted_index[word[1]]: 
+                    result.add(tmp_id)
+                    continue
             if len(result) >= 1:
-                print(len(result),end='')
-                print('個の文書が見つかりました :',end='')
-                print(result)
+                self.print_result(result)
                 return result
             else:
-                print('文書が見つかりませんでした。')
-                sys.exit()
+                self.not_fund()
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
 
     def serach_or(self, word):
         """
         転置インデックスからワードをOR検索し文書id一覧を返す。
         見つからなければプログラムを終了する
         """
-        index = []
         result = set()
         if word[0] in self.inverted_index or word[1] in self.inverted_index:
-            index.append(self.inverted_index[word[0]])
-            index.append(self.inverted_index[word[1]])
-            result = set(index[0]) | set(index[1])
+            for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
+            for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
             if len(result) >= 1:
-                print(len(result),end='')
-                print('個の文書が見つかりました :',end='')
-                print(result)
+                self.print_result(result)
                 return result
             else:
-                print('文書が見つかりませんでした。')
-                sys.exit()
+                self.not_fund()
         else:
-            print('文書が見つかりませんでした。')
-            sys.exit()
+            self.not_fund()
+
+    @staticmethod
+    def not_fund():
+        """
+        文書が見つからないことを表示し、プログラムを終了します
+        """
+        print('文書が見つかりませんでした。')
+        sys.exit()
+    
+    @staticmethod
+    def print_result(result):
+        """
+        入力されたセットから結果を表示します。
+        """
+        print(len(result),end='')
+        print('個の文書が見つかりました :',end='')
+        print(result)
+
 
 
         
@@ -191,16 +195,7 @@ class Searcher:
             if tmp_id in id_list:
                 tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
 
-        # tf-idfでランキングを作成する(ランク高い順でidの辞書を作成
-        score_sorted = sorted(tfidf_list.items(), reverse=True, key=lambda x:x[1])
-        print('マッチした文章をtf-idfでランキングします')
-        i = 0
-        for tmp_tuple in score_sorted:
-            i += 1
-            print('{: ^5}'.format(i), end=' ')
-            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
-            print(tmp_tuple[1])
-        print('')
+        self.rank(tfidf_list, 'マッチした文章をtf-idfでランキングします')
 
     def rank_tf(self, word, id_list, input_path):
         """
@@ -219,9 +214,16 @@ class Searcher:
             if tmp_id in id_list:
                 tf_list[tmp_id] = load_tf_list[tmp_id]
 
-        # tfでランキングを作成する(ランク高い順でidの辞書を作成
-        score_sorted = sorted(tf_list.items(), reverse=True, key=lambda x:x[1])
-        print('マッチした文章をtfでランキングします')
+        self.rank(tf_list, 'マッチした文章をtfでランキングします')
+
+    @staticmethod
+    def rank(dict, detail='ランキング表示します'):
+        """
+        入力の値からランキング表示します
+        input: {文書id:値}, 表示するテキスト
+        """
+        score_sorted = sorted(dict.items(), reverse=True, key=lambda x:x[1]) # ランク高い順でidの辞書を作成
+        print(detail)
         i = 0
         for tmp_tuple in score_sorted:
             i += 1
@@ -229,6 +231,8 @@ class Searcher:
             print('{: ^15}'.format(tmp_tuple[0]), end=' ')
             print(tmp_tuple[1])
         print('')
+
+
 
 
             
