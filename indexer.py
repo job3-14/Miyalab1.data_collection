@@ -48,10 +48,11 @@ class Indexer:
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
             word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
             tf_dict = self.count_tf(word_count_dict) #tf値を計算する
-            # frequency = self.make_frequency(word_count_dict) # 頻度を作成する
-            # self.make_plot(frequency) # プロットを作成する
+            if self.args.plot:
+                frequency = self.make_frequency(word_count_dict) # 頻度を作成する
+                self.make_plot(frequency) # プロットを作成する
             idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
-            
+
             ### 保存
             self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
             self.make_tf(tf_dict)
@@ -368,6 +369,10 @@ def get_args():
     parser.add_argument(
         "-i", "--input_path", type=str, required=False, default='output',
         help="入力ディレクトリ名を指定します",
+    )
+    parser.add_argument(
+        "-p", "--plot",action='store_true',
+        help="このオプションを付けるとグラフをプロットします"
     )
     return parser.parse_args()
 
