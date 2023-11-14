@@ -317,22 +317,28 @@ class Indexer:
     def make_inverted_index(self, word_dict, category_id, category_set):
         """
         転置インデックスを作成し、保存する
-        {word:[id]}
+        {word:(id)}
         """
-        # 空の辞書を作成
-        inverted_index = {} #転置インデックス {category:{word:[id]}}
-        for tmp in category_set:
-            inverted_index[tmp] = {}
+        # 辞書を作成(ファイルがあれば読み込み)
+        inverted_index = {} #転置インデックス {category:{word:(id)}}
+        for tmp_category in category_set:
+            path = self.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
+            if os.path.isfile(path):
+                inverted_index[tmp_category] = self.open_pkl(path)
+            else:
+                inverted_index[tmp_category] = {}
 
         for tmp_id in word_dict:   # idごとに繰り返し
             tmp_category = category_id[tmp_id]
             for tmp_word in word_dict[tmp_id][1]:  # 各idごとのワードを取り出す
                 if tmp_word in inverted_index[tmp_category]:
                     # 既にwordが存在する場合
-                    inverted_index[tmp_category][tmp_word].append(tmp_id)
+                    inverted_index[tmp_category][tmp_word].add(tmp_id)
                 else:
                     # wordが存在しない場合(新規作成)
-                    inverted_index[tmp_category][tmp_word] = [tmp_id]
+                    inverted_index[tmp_category][tmp_word] = {tmp_id}
+                    print('!')
+
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
             path = self.join_path(self.output_path, 'inverted_index', tmp_category)
