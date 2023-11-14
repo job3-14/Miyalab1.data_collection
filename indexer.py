@@ -41,7 +41,7 @@ class Indexer:
         try:
             input_path = self.join_path(self.args.input_path)     # inputパス
             self.output_path = self.join_path(self.args.output_path)   # outputパス
-            json_list = self.read_json(input_path) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            json_list = self.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
             category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
@@ -66,25 +66,26 @@ class Indexer:
         return os.path.join(*a_tuple)
     
     @staticmethod
-    def open_file_list(input_path):
+    def open_file_list(input_path, input_category):
         """
         引数に指定されたファイルないのファイル名の配列を返す。
         input_path:　入力ディレクトリ
-        category: 転置インデックスを作成する対象カテゴリ
+        input_category: 転置インデックスを作成する対象カテゴリ
         """
         file_path = [] # フォルダ一覧
-        path = os.path.join(input_path,'*','*')
-        files = glob.glob(path)
-        for path in files:
-            file_path.append(path)
+        for tmp_category in input_category:
+            path = os.path.join(input_path,tmp_category,'*.json')
+            files = glob.glob(path)
+            for path in files:
+                file_path.append(path)
         return file_path
     
-    def read_json(self,input_path):
+    def read_json(self,input_path, input_category):
         """
         引数のパスの辞書からjsonを読み込む。
         jsonからtitleとbodyのみの辞書をリスト形式で返す。
         """
-        path = self.open_file_list(input_path)
+        path = self.open_file_list(input_path, input_category)
         json_list = []
         for tmp_path in path:
             with open(tmp_path) as f:
