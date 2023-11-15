@@ -145,8 +145,9 @@ class Searcher:
         見つからなければプログラムを終了する
         """
         result = set()
-        if word[0] in self.inverted_index or word[1] in self.inverted_index:
+        if word[0] in self.inverted_index:
             for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
+        if word[1] in self.inverted_index:
             for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
             if len(result) >= 1:
                 self.print_result(result)
