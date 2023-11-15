@@ -336,16 +336,22 @@ class Indexer:
             for tmp_word in word_dict[tmp_id][1]:  # 各idごとのワードを取り出す
                 if tmp_word in inverted_index[tmp_category]:
                     # 既にwordが存在する場合
-                    inverted_index[tmp_category][tmp_word].add(tmp_id)
+                    inverted_index[tmp_category][tmp_word].append(tmp_id)
                 else:
                     # wordが存在しない場合(新規作成)
-                    inverted_index[tmp_category][tmp_word] = {tmp_id}
-            inverted_index[tmp_category].sort() # 昇順にソート
+                    inverted_index[tmp_category][tmp_word] = [tmp_id]
+        
+        for tmp_category in inverted_index:
+            for tmp_word in inverted_index[tmp_category]:
+                inverted_index[tmp_category][tmp_word] = set(inverted_index[tmp_category][tmp_word])
+                inverted_index[tmp_category][tmp_word] = sorted(list(inverted_index[tmp_category][tmp_word])) # 昇順にソート
+                
 
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
             path = self.join_path(self.output_path, 'inverted_index', tmp_category)
             self.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
+            print(inverted_index[tmp_category])
 
 
     @staticmethod
