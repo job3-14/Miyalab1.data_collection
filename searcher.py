@@ -91,7 +91,7 @@ class Searcher:
             for word in tmp_index:
                 # キーが存在した場合
                 if word in inverted_index:
-                    inverted_index[word] |= tmp_index[word]
+                    inverted_index[word] += tmp_index[word]
                 # キーが存在しなかった場合
                 else:
                     inverted_index[word] = tmp_index[word]
