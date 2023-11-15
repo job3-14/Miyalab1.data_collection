@@ -103,9 +103,13 @@ class Searcher:
         """
         バイナリファイルを読み込み辞書を返す。
         """
-        with open(input_path, mode='rb') as f:
-            dict = pickle.load(f)
-        return dict
+        try:
+            with open(input_path, mode='rb') as f:
+                dict = pickle.load(f)
+            return dict
+        except:
+            print('ファイルを開けませんでした')
+            sys.exit()
     
     def serach(self, word):
         """
