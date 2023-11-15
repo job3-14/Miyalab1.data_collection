@@ -351,8 +351,6 @@ class Indexer:
         for tmp_category in inverted_index:
             path = self.join_path(self.output_path, 'inverted_index', tmp_category)
             self.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
-            print(inverted_index[tmp_category])
-
 
     @staticmethod
     def make_directories(path):
