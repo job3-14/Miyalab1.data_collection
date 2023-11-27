@@ -44,7 +44,7 @@ class Indexer:
         try:
             input_path = self.fileHandler.join_path(self.args.input_path)     # inputパス
             self.output_path = self.fileHandler.join_path(self.args.output_path)   # outputパス
-            json_list = self.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            json_list = self.fileHandler.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
             category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
@@ -63,35 +63,6 @@ class Indexer:
                 self.make_plot(frequency) # プロットを作成する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
-    
-    @staticmethod
-    def open_file_list(input_path, input_category):
-        """
-        引数に指定されたファイルないのファイル名の配列を返す。
-        input_path:　入力ディレクトリ
-        input_category: 転置インデックスを作成する対象カテゴリ
-        """
-        file_path = [] # フォルダ一覧
-        for tmp_category in input_category:
-            path = os.path.join(input_path,tmp_category,'*.json')
-            files = glob.glob(path)
-            for path in files:
-                file_path.append(path)
-        return file_path
-    
-    def read_json(self,input_path, input_category):
-        """
-        引数のパスの辞書からjsonを読み込む。
-        jsonからtitleとbodyのみの辞書をリスト形式で返す。
-        """
-        path = self.open_file_list(input_path, input_category)
-        json_list = []
-        for tmp_path in path:
-            with open(tmp_path) as f:
-                json_raw_data = json.load(f)
-            del  json_raw_data['url']
-            json_list.append(json_raw_data)
-        return json_list
     
     @staticmethod
     def make_category_set(json_list):
@@ -320,7 +291,7 @@ class Indexer:
         for tmp_category in category_set:
             path = self.fileHandler.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
             if os.path.isfile(path):
-                inverted_index[tmp_category] = self.open_pkl(path)
+                inverted_index[tmp_category] = self.fileHandler.open_pkl(path)
             else:
                 inverted_index[tmp_category] = {}
 
@@ -339,22 +310,11 @@ class Indexer:
                 inverted_index[tmp_category][tmp_word] = set(inverted_index[tmp_category][tmp_word])
                 inverted_index[tmp_category][tmp_word] = sorted(list(inverted_index[tmp_category][tmp_word])) # 昇順にソート
                 
-
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
             path = self.fileHandler.join_path(self.output_path, 'inverted_index', tmp_category)
             self.fileHandler.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
-    
 
-    @staticmethod
-    def open_pkl(path):
-        """
-        引数からpklファイルを読み込み返す
-        """
-        with open(path, 'rb') as p:
-            l = pickle.load(p)
-        return l
-    
 class FileHandler:
     """
     ファイル操作を行うクラスです
@@ -376,6 +336,20 @@ class FileHandler:
         出力するディレクトリを作成する
         """
         os.makedirs(path, exist_ok=True)
+
+    def read_json(self,input_path, input_category):
+        """
+        引数のパスの辞書からjsonを読み込む。
+        jsonからtitleとbodyのみの辞書をリスト形式で返す。
+        """
+        path = self.open_file_list(input_path, input_category)
+        json_list = []
+        for tmp_path in path:
+            with open(tmp_path) as f:
+                json_raw_data = json.load(f)
+            del  json_raw_data['url']
+            json_list.append(json_raw_data)
+        return json_list
     
     def perpetuation(self, keep_var, output_path, filename):
         """
@@ -394,6 +368,21 @@ class FileHandler:
         with open(path, 'rb') as p:
             l = pickle.load(p)
         return l
+    
+    @staticmethod
+    def open_file_list(input_path, input_category):
+        """
+        引数に指定されたファイルないのファイル名の配列を返す。
+        input_path:　入力ディレクトリ
+        input_category: 転置インデックスを作成する対象カテゴリ
+        """
+        file_path = [] # フォルダ一覧
+        for tmp_category in input_category:
+            path = os.path.join(input_path,tmp_category,'*.json')
+            files = glob.glob(path)
+            for path in files:
+                file_path.append(path)
+        return file_path
 
 
 
