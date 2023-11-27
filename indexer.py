@@ -35,14 +35,15 @@ class Indexer:
         初期化します
         """
         self.args = args
+        self.fileHandler = FileHandler()
 
     def run(self):
         """
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path)     # inputパス
-            self.output_path = self.join_path(self.args.output_path)   # outputパス
+            input_path = self.fileHandler.join_path(self.args.input_path)     # inputパス
+            self.output_path = self.fileHandler.join_path(self.args.output_path)   # outputパス
             json_list = self.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
             category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
@@ -62,14 +63,6 @@ class Indexer:
                 self.make_plot(frequency) # プロットを作成する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
-    
-    @staticmethod
-    def join_path(*a_tuple):
-        """
-        ファイルをのディレクトリを返す。
-        引数(*a_tuple)は複数の引数をタプルとして受け取る
-        """
-        return os.path.join(*a_tuple)
     
     @staticmethod
     def open_file_list(input_path, input_category):
@@ -262,10 +255,10 @@ class Indexer:
                     # wordが存在しない場合(新規作成)
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
-        path = self.join_path(self.output_path, 'idf')
+        path = self.fileHandler.join_path(self.output_path, 'idf')
         if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
-            self.perpetuation(index[word_index], path, word_index)
+            self.fileHandler.perpetuation(index[word_index], path, word_index)
 
     
     def make_tf(self, tf_dict):
@@ -285,10 +278,10 @@ class Indexer:
                     # wordが存在しない場合(新規作成)
                     index[word] = {id:tf}
         # 単語ごとに保存する
-        path = self.join_path(self.output_path, 'tf')
+        path = self.fileHandler.join_path(self.output_path, 'tf')
         if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
-            self.perpetuation(index[word_index], path, word_index)
+            self.fileHandler.perpetuation(index[word_index], path, word_index)
 
     @staticmethod
     def make_frequency(word_count_dict):
@@ -325,7 +318,7 @@ class Indexer:
         # 辞書を作成(ファイルがあれば読み込み)
         inverted_index = {} #転置インデックス {category:{word:(id)}}
         for tmp_category in category_set:
-            path = self.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
+            path = self.fileHandler.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
             if os.path.isfile(path):
                 inverted_index[tmp_category] = self.open_pkl(path)
             else:
@@ -349,8 +342,33 @@ class Indexer:
 
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
-            path = self.join_path(self.output_path, 'inverted_index', tmp_category)
-            self.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
+            path = self.fileHandler.join_path(self.output_path, 'inverted_index', tmp_category)
+            self.fileHandler.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
+    
+
+    @staticmethod
+    def open_pkl(path):
+        """
+        引数からpklファイルを読み込み返す
+        """
+        with open(path, 'rb') as p:
+            l = pickle.load(p)
+        return l
+    
+class FileHandler:
+    """
+    ファイル操作を行うクラスです
+    """
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def join_path(*a_tuple):
+        """
+        ファイルをのディレクトリを返す。
+        引数(*a_tuple)は複数の引数をタプルとして受け取る
+        """
+        return os.path.join(*a_tuple)
 
     @staticmethod
     def make_directories(path):
@@ -376,6 +394,8 @@ class Indexer:
         with open(path, 'rb') as p:
             l = pickle.load(p)
         return l
+
+
 
 
 def get_args():
