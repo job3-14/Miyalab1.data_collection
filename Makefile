@@ -35,7 +35,7 @@ ifeq ($(MODULE),indexer)
 endif
 
 ifeq ($(MODULE),searcher)
-	@$(PYTHON) ./$(TARGET) --input_path index --search_word 38 速報  --category society sports government --mode and
+	@$(PYTHON) ./$(TARGET) --input_path index --search_word ニュース 税金  --category society sports government --mode and
 endif
 	
 doc:
