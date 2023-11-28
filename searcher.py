@@ -91,7 +91,7 @@ class Searcher:
             for word in tmp_index:
                 # キーが存在した場合
                 if word in inverted_index:
-                    inverted_index[word] |= tmp_index[word]
+                    inverted_index[word] += tmp_index[word]
                 # キーが存在しなかった場合
                 else:
                     inverted_index[word] = tmp_index[word]
@@ -103,9 +103,13 @@ class Searcher:
         """
         バイナリファイルを読み込み辞書を返す。
         """
-        with open(input_path, mode='rb') as f:
-            dict = pickle.load(f)
-        return dict
+        try:
+            with open(input_path, mode='rb') as f:
+                dict = pickle.load(f)
+            return dict
+        except:
+            print('ファイルを開けませんでした')
+            sys.exit()
     
     def serach(self, word):
         """
