@@ -124,14 +124,13 @@ class Serach:
         """
         result = set()
         if word[0] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
+            result = set(self.inverted_index[word[0]])
         if word[1] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
-            if len(result) >= 1:
-                self.printMessage.print_result(result)
-                return result
-            else:
-                self.printMessage.not_fund()
+            index = self.inverted_index[word[1]]
+            for tmp in index:result.add(tmp)
+        if len(result) >= 1:
+            self.printMessage.print_result(result)
+            return result
         else:
             self.printMessage.not_fund()
 
