@@ -48,7 +48,7 @@ class Indexer:
         try:
             input_path = self.fileHandler.join_path(self.args.input_path)     # inputパス
             output_path = self.fileHandler.join_path(self.args.output_path)   # outputパス
-            json_list = self.fileHandler.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            json_list = self.jsonProcesser.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
             category_set = self.jsonProcesser.make_category_set(json_list)  # set(カテゴリー)を作成
             category_id = self.jsonProcesser.make_category_id(json_list)    # {id:カテゴリー}を作成
             word_dict = self.morphologicalAnalyzer.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
@@ -89,20 +89,6 @@ class FileHandler:
         出力するディレクトリを作成する
         """
         os.makedirs(path, exist_ok=True)
-
-    def read_json(self,input_path, input_category):
-        """
-        引数のパスの辞書からjsonを読み込む。
-        jsonからtitleとbodyのみの辞書をリスト形式で返す。
-        """
-        path = self.open_file_list(input_path, input_category)
-        json_list = []
-        for tmp_path in path:
-            with open(tmp_path) as f:
-                json_raw_data = json.load(f)
-            del  json_raw_data['url']
-            json_list.append(json_raw_data)
-        return json_list
     
     def perpetuation(self, keep_var, output_path, filename):
         """
@@ -142,7 +128,21 @@ class JsonProcessor:
     jsonファイルを処理するクラス
     """
     def __init__(self):
-        pass
+        self.fileHandler = FileHandler()
+
+    def read_json(self,input_path, input_category):
+        """
+        引数のパスの辞書からjsonを読み込む。
+        jsonからtitleとbodyのみの辞書をリスト形式で返す。
+        """
+        path = self.fileHandler.open_file_list(input_path, input_category)
+        json_list = []
+        for tmp_path in path:
+            with open(tmp_path) as f:
+                json_raw_data = json.load(f)
+            del  json_raw_data['url']
+            json_list.append(json_raw_data)
+        return json_list
 
     @staticmethod
     def make_category_set(json_list):
