@@ -305,7 +305,7 @@ class Analyzer:
                     # wordが存在しない場合(新規作成)
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
-        path = self.fileHandler.join_path(output_path, 'idf')
+        path = self.fileHandler.join_path(output_path, 'tf-idf')
         if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
             self.fileHandler.perpetuation(index[word_index], path, word_index)

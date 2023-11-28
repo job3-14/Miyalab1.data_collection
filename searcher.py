@@ -50,8 +50,8 @@ class Searcher:
             # 検索モード:single
             if mode == 'single':
                 id_list = self.serach_class.serach(serach_word[0])
-                self.rank.rank_tf_idf(serach_word[0], id_list, input_path)
-                self.rank.rank_tf(serach_word[0], id_list, input_path)
+                self.rank.rank_sort_data(serach_word[0], id_list, input_path, 'tf-idf')
+                self.rank.rank_sort_data(serach_word[0], id_list, input_path, 'tf')
             # AND検索
             elif mode == 'and':
                 self.serach_class.serach_and(serach_word)
@@ -131,15 +131,16 @@ class Rank:
     def __init__(self):
         self.fileHandler = FileHandler()
 
-    def rank_tf_idf(self, word, id_list, input_path):
+    def rank_sort_data(self, word, id_list, input_path, type):
         """
-        単語からから文書のtf-idfのランキングを作成し出力する
+        単語からから文書の引数typeのランキングを作成し出力する
         word = 検索ワード
         id_list = 該当する文書idのリスト
         input_path = 入力パス
+        type = ランキング種別(ファイル名)
         """
         # ワードのif-idfを読み込む
-        idf_path = self.fileHandler.join_path(input_path, 'idf', word+'.pkl')  # idfのパス
+        idf_path = self.fileHandler.join_path(input_path, type, word+'.pkl')  # idfのパス
         load_tfidf_list = self.fileHandler.open_pkl(idf_path)
 
         # 該当するtf-idfのみを抽出
@@ -148,29 +149,10 @@ class Rank:
             if tmp_id in id_list:
                 tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
 
-        self.rank(tfidf_list, 'マッチした文章をtf-idfでランキングします')
-
-    def rank_tf(self, word, id_list, input_path):
-        """
-        単語からから文書のtfのランキングを作成し出力する
-        word = 検索ワード
-        id_list = 該当する文書idのリスト
-        input_path = 入力パス
-        """
-        # ワードのtfを読み込む
-        tf_path = self.fileHandler.join_path(input_path, 'tf', word+'.pkl')  # idfのパス
-        load_tf_list = self.fileHandler.open_pkl(tf_path)
-
-        # 該当するtfのみを抽出
-        tf_list = {} # 該当する文書のifidfの辞書
-        for tmp_id in load_tf_list:
-            if tmp_id in id_list:
-                tf_list[tmp_id] = load_tf_list[tmp_id]
-
-        self.rank(tf_list, 'マッチした文章をtfでランキングします')
+        self.printRank(tfidf_list, f'マッチした文章を{type}でランキングします')
 
     @staticmethod
-    def rank(dict, detail='ランキング表示します'):
+    def printRank(dict, detail='ランキング表示します'):
         """
         入力の値からランキング表示します
         input: {文書id:値}, 表示するテキスト
@@ -184,6 +166,8 @@ class Rank:
             print('{: ^15}'.format(tmp_tuple[0]), end=' ')
             print(tmp_tuple[1])
         print('')
+
+
 
 class FileHandler2(FileHandler):
     """
@@ -200,6 +184,9 @@ class FileHandler2(FileHandler):
         for tmp in input_category:
             inverted_index_path.append(self.join_path(input_path, 'inverted_index', tmp,'inverted_index.pkl'))
         return inverted_index_path
+
+
+
 
 class PrintMessage:
     """
@@ -221,6 +208,9 @@ class PrintMessage:
         print(len(result),end='')
         print('個の文書が見つかりました :',end='')
         print(result)
+
+
+
 
 class MakeIndex():
     """
