@@ -15,6 +15,8 @@ import os
 from re import S
 import sys
 import pickle
+import copy
+import math
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
 from indexer import FileHandler
@@ -93,16 +95,25 @@ class Serach:
         """
         # 38 速報
         result = set()
-        if word[0] in self.inverted_index and word[1] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[0]]:
-                if tmp_id in self.inverted_index[word[1]]: 
-                    result.add(tmp_id)
-                    continue
-            if len(result) >= 1:
-                self.printMessage.print_result(result)
-                return result
-            else:
-                self.printMessage.not_fund()
+        index1 = self.inverted_index[word[0]]
+        index2 = self.inverted_index[word[1]]
+        for tmp_id1 in index1:
+            copy_index = copy.deepcopy(index2)
+            while True:
+                index_len = len(copy_index)
+                center_index = int(index_len / 2)
+                if copy_index[center_index] == tmp_id1:
+                    result.add(tmp_id1)
+                    break
+                elif len(copy_index) == 1:
+                    break
+                elif copy_index[center_index] < tmp_id1:
+                    del copy_index[center_index:]
+                elif copy_index[center_index] > tmp_id1:
+                    del copy_index[:center_index]
+        if len(result) >= 1:
+            self.printMessage.print_result(result)
+            return result
         else:
             self.printMessage.not_fund()
 
