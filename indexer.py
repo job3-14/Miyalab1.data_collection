@@ -35,34 +35,46 @@ class Indexer:
         初期化します
         """
         self.args = args
+        self.fileHandler = FileHandler()
+        self.jsonProcesser = JsonProcessor()
+        self.morphologicalAnalyzer = MorphologicalAnalyzer()
+        self.analyzer = Analyzer()
+        self.plot = Plot()
 
     def run(self):
         """
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path)     # inputパス
-            self.output_path = self.join_path(self.args.output_path)   # outputパス
-            json_list = self.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
-            category_set = self.make_category_set(json_list)  # set(カテゴリー)を作成
-            category_id = self.make_category_id(json_list)    # {id:カテゴリー}を作成
-            word_dict = self.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
-            word_count_dict = self.make_word_count(word_dict) # 文書内の回数リストを作成
-            tf_dict = self.count_tf(word_count_dict) #tf値を計算する
-            idf_dict = self.count_idf(json_list, word_count_dict) # idfを計算する
+            input_path = self.fileHandler.join_path(self.args.input_path)     # inputパス
+            output_path = self.fileHandler.join_path(self.args.output_path)   # outputパス
+            json_list = self.jsonProcesser.read_json(input_path, self.args.category) # ファイル一覧を取得し、jsonファイルを読み込み辞書にして返す
+            category_set = self.jsonProcesser.make_category_set(json_list)  # set(カテゴリー)を作成
+            category_id = self.jsonProcesser.make_category_id(json_list)    # {id:カテゴリー}を作成
+            word_dict = self.morphologicalAnalyzer.morphological_analysis(json_list) # 形態素解析行う {id:[[word_list],(word_set)]}
+            word_count_dict = self.analyzer.make_word_count(word_dict) # 文書内の回数リストを作成
+            tf_dict = self.analyzer.count_tf(word_count_dict) #tf値を計算する
+            idf_dict = self.analyzer.count_idf(json_list, word_count_dict) # idfを計算する
             
             ### 保存
-            self.count_tf_idf(tf_dict, idf_dict) # idfインデックスを作成
-            self.make_tf(tf_dict)
-            self.make_inverted_index(word_dict,category_id, category_set) # 転置インデックスを作成
+            self.analyzer.count_tf_idf(tf_dict, idf_dict, output_path) # idfインデックスを作成
+            self.analyzer.make_tf(tf_dict, output_path)
+            self.analyzer.make_inverted_index(word_dict,category_id, category_set, output_path) # 転置インデックスを作成
 
             ### グラフ作成
             if self.args.plot:
-                frequency = self.make_frequency(word_count_dict) # 頻度を作成する
-                self.make_plot(frequency) # プロットを作成する
+                frequency = self.analyzer.make_frequency(word_count_dict) # 頻度を作成する
+                self.plot.make_plot(frequency) # プロットを作成する
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
-    
+
+class FileHandler:
+    """
+    ファイル操作を行うクラスです
+    """
+    def __init__(self):
+        pass
+
     @staticmethod
     def join_path(*a_tuple):
         """
@@ -70,6 +82,31 @@ class Indexer:
         引数(*a_tuple)は複数の引数をタプルとして受け取る
         """
         return os.path.join(*a_tuple)
+
+    @staticmethod
+    def make_directories(path):
+        """
+        出力するディレクトリを作成する
+        """
+        os.makedirs(path, exist_ok=True)
+    
+    def perpetuation(self, keep_var, output_path, filename):
+        """
+        引数から入力された変数をバイナリデータとして保存する
+        """
+        self.make_directories(output_path)
+        output_path = self.join_path(output_path, filename+'.pkl')
+        with open(output_path,'wb') as f:
+            pickle.dump(keep_var, f)
+
+    @staticmethod
+    def open_pkl(path):
+        """
+        引数からpklファイルを読み込み返す
+        """
+        with open(path, 'rb') as p:
+            l = pickle.load(p)
+        return l
     
     @staticmethod
     def open_file_list(input_path, input_category):
@@ -85,13 +122,20 @@ class Indexer:
             for path in files:
                 file_path.append(path)
         return file_path
-    
+
+class JsonProcessor:
+    """
+    jsonファイルを処理するクラス
+    """
+    def __init__(self):
+        self.fileHandler = FileHandler()
+
     def read_json(self,input_path, input_category):
         """
         引数のパスの辞書からjsonを読み込む。
         jsonからtitleとbodyのみの辞書をリスト形式で返す。
         """
-        path = self.open_file_list(input_path, input_category)
+        path = self.fileHandler.open_file_list(input_path, input_category)
         json_list = []
         for tmp_path in path:
             with open(tmp_path) as f:
@@ -99,7 +143,7 @@ class Indexer:
             del  json_raw_data['url']
             json_list.append(json_raw_data)
         return json_list
-    
+
     @staticmethod
     def make_category_set(json_list):
         """
@@ -120,7 +164,11 @@ class Indexer:
         for json_tmp in json_list:
             category_id[json_tmp['id']] = json_tmp['category']
         return category_id
-    
+
+class MorphologicalAnalyzer:
+    """
+    形態素解析を行うクラスです
+    """
     @staticmethod
     def morphological_analysis(json_list):
         """
@@ -145,6 +193,13 @@ class Indexer:
             word_dict[article['id']] = [word_list, word_set]
         return word_dict
     
+class Analyzer:
+    """
+    文書の頻度などを計算するクラス
+    """
+    def __init__(self):
+        self.fileHandler = FileHandler()
+
     @staticmethod
     def make_word_count(word_dict):
         """
@@ -192,18 +247,6 @@ class Indexer:
         frequency.sort(reverse=True)
         cie = [[cie_x],[frequency]]
         return cie
-    
-    def make_plot(self, frequency):
-        """
-        配列からグラフを作成する
-        """
-        cie = self.make_frequency_list(frequency)
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        ax.scatter(cie[0], cie[1])
-        ax.set_xlabel("rank(log)")
-        ax.set_ylabel("frequency(log)")
-        plt.show()
 
     @staticmethod
     def count_idf(json_list, word_count_dict, *category):
@@ -245,7 +288,7 @@ class Indexer:
             count_word[key] = math.log(count_id / count_word[key])
         return count_word
     
-    def count_tf_idf(self, tf_dict, idf_dict):
+    def count_tf_idf(self, tf_dict, idf_dict, output_path):
         """
         tfとidfからtf-idfを計算し、インデックスを作成し保存する
         index= {word:[{id:tf-idf}]}
@@ -262,13 +305,13 @@ class Indexer:
                     # wordが存在しない場合(新規作成)
                     index[word] = {id:tf_idf}
         # 単語ごとに保存する
-        path = self.join_path(self.output_path, 'idf')
+        path = self.fileHandler.join_path(output_path, 'tf-idf')
         if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
-            self.perpetuation(index[word_index], path, word_index)
+            self.fileHandler.perpetuation(index[word_index], path, word_index)
 
     
-    def make_tf(self, tf_dict):
+    def make_tf(self, tf_dict, output_path):
         """
         tfインデックスを作成し保存する
         index= {word:[{id:tf}]}
@@ -285,10 +328,10 @@ class Indexer:
                     # wordが存在しない場合(新規作成)
                     index[word] = {id:tf}
         # 単語ごとに保存する
-        path = self.join_path(self.output_path, 'tf')
+        path = self.fileHandler.join_path(output_path, 'tf')
         if os.path.isfile(path): shutil.rmtree(path)
         for word_index in index:
-            self.perpetuation(index[word_index], path, word_index)
+            self.fileHandler.perpetuation(index[word_index], path, word_index)
 
     @staticmethod
     def make_frequency(word_count_dict):
@@ -317,7 +360,7 @@ class Indexer:
         
     
     
-    def make_inverted_index(self, word_dict, category_id, category_set):
+    def make_inverted_index(self, word_dict, category_id, category_set, output_path):
         """
         転置インデックスを作成し、保存する
         {word:(id)}
@@ -325,9 +368,9 @@ class Indexer:
         # 辞書を作成(ファイルがあれば読み込み)
         inverted_index = {} #転置インデックス {category:{word:(id)}}
         for tmp_category in category_set:
-            path = self.join_path(self.output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
+            path = self.fileHandler.join_path(output_path, 'inverted_index', tmp_category, 'inverted_index.pkl')
             if os.path.isfile(path):
-                inverted_index[tmp_category] = self.open_pkl(path)
+                inverted_index[tmp_category] = self.fileHandler.open_pkl(path)
             else:
                 inverted_index[tmp_category] = {}
 
@@ -346,36 +389,28 @@ class Indexer:
                 inverted_index[tmp_category][tmp_word] = set(inverted_index[tmp_category][tmp_word])
                 inverted_index[tmp_category][tmp_word] = sorted(list(inverted_index[tmp_category][tmp_word])) # 昇順にソート
                 
-
         # カテゴリーごとに保存する
         for tmp_category in inverted_index:
-            path = self.join_path(self.output_path, 'inverted_index', tmp_category)
-            self.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
+            path = self.fileHandler.join_path(output_path, 'inverted_index', tmp_category)
+            self.fileHandler.perpetuation(inverted_index[tmp_category], path, 'inverted_index')
 
-    @staticmethod
-    def make_directories(path):
+class Plot:
+    """
+    グラフを作成するクラスです
+    """
+    def make_plot(self, frequency):
         """
-        出力するディレクトリを作成する
+        配列からグラフを作成する
         """
-        os.makedirs(path, exist_ok=True)
+        cie = self.analyzer.make_frequency_list(frequency)
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.scatter(cie[0], cie[1])
+        ax.set_xlabel("rank(log)")
+        ax.set_ylabel("frequency(log)")
+        plt.show()
+
     
-    def perpetuation(self, keep_var, output_path, filename):
-        """
-        引数から入力された変数をバイナリデータとして保存する
-        """
-        self.make_directories(output_path)
-        output_path = self.join_path(output_path, filename+'.pkl')
-        with open(output_path,'wb') as f:
-            pickle.dump(keep_var, f)
-
-    @staticmethod
-    def open_pkl(path):
-        """
-        引数からpklファイルを読み込み返す
-        """
-        with open(path, 'rb') as p:
-            l = pickle.load(p)
-        return l
 
 
 def get_args():

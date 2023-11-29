@@ -15,8 +15,11 @@ import os
 from re import S
 import sys
 import pickle
+import copy
+import math
 from argparse import ArgumentParser
 from argparse import ArgumentDefaultsHelpFormatter
+from indexer import FileHandler
 
 
 
@@ -30,6 +33,9 @@ class Searcher:
         初期化します
         """
         self.args = args
+        self.fileHandler = FileHandler2()
+        self.rank = Rank()
+        self.makeindex = MakeIndex()
 
 
     def run(self):
@@ -37,90 +43,49 @@ class Searcher:
         インデックスの作成および保存を行う
         """
         try:
-            input_path = self.join_path(self.args.input_path)     # inputパス
+            input_path = self.fileHandler.join_path(self.args.input_path)     # inputパス
             serach_word = self.args.search_word
             mode = self.args.mode
-            inverted_index_path = self.make_path(input_path, self.args.category)     # 転置インデックスのパス
-            self.inverted_index = self.make_inverted_index(inverted_index_path)
+            inverted_index_path = self.fileHandler.make_path(input_path, self.args.category)     # 転置インデックスのパス
+            inverted_index = self.makeindex.make_inverted_index(inverted_index_path)
+            self.serach_class = Serach(inverted_index)
             # 検索モード:single
             if mode == 'single':
-                id_list = self.serach(serach_word[0])
-                self.rank_tf_idf(serach_word[0], id_list, input_path)
-                self.rank_tf(serach_word[0], id_list, input_path)
+                id_list = self.serach_class.serach(serach_word[0])
+                self.rank.rank_sort_data(serach_word[0], id_list, input_path, 'tf-idf')
+                self.rank.rank_sort_data(serach_word[0], id_list, input_path, 'tf')
             # AND検索
             elif mode == 'and':
-                self.serach_and(serach_word)
+                self.serach_class.serach_and(serach_word)
             # OR検索
             elif mode == 'or':
-                self.serach_or(serach_word)
-
-
+                self.serach_class.serach_or(serach_word)
         except KeyboardInterrupt:
             print('インデックスの作成を終了します')
-    
-    @staticmethod
-    def join_path(*a_tuple):
-        """
-        ファイルをのディレクトリを返す。
-        引数(*a_tuple)は複数の引数をタプルとして受け取る
-        """
-        return os.path.join(*a_tuple)
-    
-    def make_path(self, input_path, input_category):
-        """
-        引数に指定されたカテゴリーの転置インデックスのパスを配列で返す
-        """
-        inverted_index_path = []
-        for tmp in input_category:
-            inverted_index_path.append(self.join_path(input_path, 'inverted_index', tmp,'inverted_index.pkl'))
-        return inverted_index_path
-    
-    def make_inverted_index(self,inverted_index_path):
-        """
-        バイナリファイルを読み込み転置インデックスを結合し返す
-        setに変える
-        """
-        # 転置インデックスを読み込み配列に入れる
-        inverted_index_list = []
-        for tmp_index_path in inverted_index_path:
-            inverted_index_list.append(self.load_pkl(tmp_index_path))
 
-        # 転置インデックスを結合する
-        inverted_index = {}
-        for tmp_index in inverted_index_list:
-            for word in tmp_index:
-                # キーが存在した場合
-                if word in inverted_index:
-                    inverted_index[word] += tmp_index[word]
-                # キーが存在しなかった場合
-                else:
-                    inverted_index[word] = tmp_index[word]
-        return inverted_index
+
+
         
-    
 
-    def load_pkl(self, input_path):
-        """
-        バイナリファイルを読み込み辞書を返す。
-        """
-        try:
-            with open(input_path, mode='rb') as f:
-                dict = pickle.load(f)
-            return dict
-        except:
-            print('ファイルを開けませんでした')
-            sys.exit()
-    
+
+class Serach:
+    """
+    検索を行うクラス
+    """
+    def __init__(self, inverted_index):
+        self.printMessage = PrintMessage()
+        self.inverted_index = inverted_index
+
     def serach(self, word):
         """
         転置インデックスからワードを検索し文書id一覧を返す。
         見つからなければプログラムを終了する
         """
         if word in self.inverted_index:
-            self.print_result(self.inverted_index[word])
+            self.printMessage.print_result(self.inverted_index[word])
             return self.inverted_index[word]
         else:
-            self.not_fund()
+            self.printMessage.not_fund()
 
     
     def serach_and(self, word):
@@ -130,18 +95,27 @@ class Searcher:
         """
         # 38 速報
         result = set()
-        if word[0] in self.inverted_index and word[1] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[0]]:
-                if tmp_id in self.inverted_index[word[1]]: 
-                    result.add(tmp_id)
-                    continue
-            if len(result) >= 1:
-                self.print_result(result)
-                return result
-            else:
-                self.not_fund()
+        index1 = self.inverted_index[word[0]]
+        index2 = self.inverted_index[word[1]]
+        for tmp_id1 in index1:
+            copy_index = copy.deepcopy(index2)
+            while True:
+                index_len = len(copy_index)
+                center_index = int(index_len / 2)
+                if copy_index[center_index] == tmp_id1:
+                    result.add(tmp_id1)
+                    break
+                elif len(copy_index) == 1:
+                    break
+                elif copy_index[center_index] < tmp_id1:
+                    del copy_index[center_index:]
+                elif copy_index[center_index] > tmp_id1:
+                    del copy_index[:center_index]
+        if len(result) >= 1:
+            self.printMessage.print_result(result)
+            return result
         else:
-            self.not_fund()
+            self.printMessage.not_fund()
 
     def serach_or(self, word):
         """
@@ -150,17 +124,84 @@ class Searcher:
         """
         result = set()
         if word[0] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[0]]: result.add(tmp_id)
+            result = set(self.inverted_index[word[0]])
         if word[1] in self.inverted_index:
-            for tmp_id in self.inverted_index[word[1]]: result.add(tmp_id)
-            if len(result) >= 1:
-                self.print_result(result)
-                return result
-            else:
-                self.not_fund()
+            index = self.inverted_index[word[1]]
+            for tmp in index:result.add(tmp)
+        if len(result) >= 1:
+            self.printMessage.print_result(result)
+            return result
         else:
-            self.not_fund()
+            self.printMessage.not_fund()
 
+class Rank:
+    """
+    ランキングを行うクラス
+    """
+    def __init__(self):
+        self.fileHandler = FileHandler()
+
+    def rank_sort_data(self, word, id_list, input_path, type):
+        """
+        単語からから文書の引数typeのランキングを作成し出力する
+        word = 検索ワード
+        id_list = 該当する文書idのリスト
+        input_path = 入力パス
+        type = ランキング種別(ファイル名)
+        """
+        # ワードのif-idfを読み込む
+        idf_path = self.fileHandler.join_path(input_path, type, word+'.pkl')  # idfのパス
+        load_tfidf_list = self.fileHandler.open_pkl(idf_path)
+
+        # 該当するtf-idfのみを抽出
+        tfidf_list = {} # 該当する文書のifidfの辞書
+        for tmp_id in load_tfidf_list:
+            if tmp_id in id_list:
+                tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
+
+        self.printRank(tfidf_list, f'マッチした文章を{type}でランキングします')
+
+    @staticmethod
+    def printRank(dict, detail='ランキング表示します'):
+        """
+        入力の値からランキング表示します
+        input: {文書id:値}, 表示するテキスト
+        """
+        score_sorted = sorted(dict.items(), reverse=True, key=lambda x:x[1]) # ランク高い順でidの辞書を作成
+        print(detail)
+        i = 0
+        for tmp_tuple in score_sorted:
+            i += 1
+            print('{: ^5}'.format(i), end=' ')
+            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
+            print(tmp_tuple[1])
+        print('')
+
+
+
+class FileHandler2(FileHandler):
+    """
+    ファイル操作を行うクラスです
+    """
+    def __init__(self):
+        pass
+
+    def make_path(self, input_path, input_category):
+        """
+        引数に指定されたカテゴリーの転置インデックスのパスを配列で返す
+        """
+        inverted_index_path = []
+        for tmp in input_category:
+            inverted_index_path.append(self.join_path(input_path, 'inverted_index', tmp,'inverted_index.pkl'))
+        return inverted_index_path
+
+
+
+
+class PrintMessage:
+    """
+    結果などを表示するためのクラス
+    """
     @staticmethod
     def not_fund():
         """
@@ -180,62 +221,35 @@ class Searcher:
 
 
 
-        
-    
 
-    def rank_tf_idf(self, word, id_list, input_path):
+class MakeIndex():
+    """
+    転置インデックスを作成するクラス
+    """
+    def __init__(self):
+        self.fileHandler = FileHandler()
+
+    def make_inverted_index(self,inverted_index_path):
         """
-        単語からから文書のtf-idfのランキングを作成し出力する
-        word = 検索ワード
-        id_list = 該当する文書idのリスト
-        input_path = 入力パス
+        バイナリファイルを読み込み転置インデックスを結合し返す
+        setに変える
         """
-        # ワードのif-idfを読み込む
-        idf_path = self.join_path(input_path, 'idf', word+'.pkl')  # idfのパス
-        load_tfidf_list = self.load_pkl(idf_path)
+        # 転置インデックスを読み込み配列に入れる
+        inverted_index_list = []
+        for tmp_index_path in inverted_index_path:
+            inverted_index_list.append(self.fileHandler.open_pkl(tmp_index_path))
 
-        # 該当するtf-idfのみを抽出
-        tfidf_list = {} # 該当する文書のifidfの辞書
-        for tmp_id in load_tfidf_list:
-            if tmp_id in id_list:
-                tfidf_list[tmp_id] = load_tfidf_list[tmp_id]
-
-        self.rank(tfidf_list, 'マッチした文章をtf-idfでランキングします')
-
-    def rank_tf(self, word, id_list, input_path):
-        """
-        単語からから文書のtfのランキングを作成し出力する
-        word = 検索ワード
-        id_list = 該当する文書idのリスト
-        input_path = 入力パス
-        """
-        # ワードのtfを読み込む
-        tf_path = self.join_path(input_path, 'tf', word+'.pkl')  # idfのパス
-        load_tf_list = self.load_pkl(tf_path)
-
-        # 該当するtfのみを抽出
-        tf_list = {} # 該当する文書のifidfの辞書
-        for tmp_id in load_tf_list:
-            if tmp_id in id_list:
-                tf_list[tmp_id] = load_tf_list[tmp_id]
-
-        self.rank(tf_list, 'マッチした文章をtfでランキングします')
-
-    @staticmethod
-    def rank(dict, detail='ランキング表示します'):
-        """
-        入力の値からランキング表示します
-        input: {文書id:値}, 表示するテキスト
-        """
-        score_sorted = sorted(dict.items(), reverse=True, key=lambda x:x[1]) # ランク高い順でidの辞書を作成
-        print(detail)
-        i = 0
-        for tmp_tuple in score_sorted:
-            i += 1
-            print('{: ^5}'.format(i), end=' ')
-            print('{: ^15}'.format(tmp_tuple[0]), end=' ')
-            print(tmp_tuple[1])
-        print('')
+        # 転置インデックスを結合する
+        inverted_index = {}
+        for tmp_index in inverted_index_list:
+            for word in tmp_index:
+                # キーが存在した場合
+                if word in inverted_index:
+                    inverted_index[word] += tmp_index[word]
+                # キーが存在しなかった場合
+                else:
+                    inverted_index[word] = tmp_index[word]
+        return inverted_index
 
 
 
