@@ -93,24 +93,20 @@ class Serach:
         転置インデックスからワードをAND検索し文書id一覧を返す。
         見つからなければプログラムを終了する
         """
-        # 38 速報
         result = set()
         index1 = self.inverted_index[word[0]]
         index2 = self.inverted_index[word[1]]
-        for tmp_id1 in index1:
-            copy_index = copy.deepcopy(index2)
-            while True:
-                index_len = len(copy_index)
-                center_index = int(index_len / 2)
-                if copy_index[center_index] == tmp_id1:
-                    result.add(tmp_id1)
-                    break
-                elif len(copy_index) == 1:
-                    break
-                elif copy_index[center_index] < tmp_id1:
-                    del copy_index[center_index:]
-                elif copy_index[center_index] > tmp_id1:
-                    del copy_index[:center_index]
+        count_1 = 0
+        count_2 = 0
+        while count_1 < len(index1) and count_2 < len(index2):
+            if index1[count_1] == index2[count_2]:
+                result.add(index1[count_1])
+                count_1 += 1
+                count_2 += 1
+            elif index1[count_1] < index2[count_2]:
+                count_1 += 1
+            else:
+                count_2 += 1
         if len(result) >= 1:
             self.printMessage.print_result(result)
             return result
